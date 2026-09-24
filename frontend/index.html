@@ -8,7 +8,7 @@
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #141414; color: #fff; margin: 0; padding: 20px; }
     h1 { text-align: center; color: #e50914; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Pestañas de Modo (Películas / Series) */
+    /* Modos (Películas / Series) */
     .mode-switch { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
     .mode-btn { background: #222; color: #fff; border: 2px solid #333; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-size: 15px; font-weight: bold; transition: 0.2s; }
     .mode-btn.active, .mode-btn:hover { background: #e50914; border-color: #e50914; }
@@ -26,7 +26,7 @@
 
     .loading-info { text-align: center; font-size: 14px; color: #888; margin-bottom: 15px; }
 
-    /* Grid (50 Elementos por página) */
+    /* Grid */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; min-height: 400px; }
     .card { background: #222; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; }
     .card:hover { transform: scale(1.04); }
@@ -40,26 +40,28 @@
     .page-btn:disabled { background: #111; color: #555; cursor: not-allowed; }
     .page-num { font-size: 14px; color: #ccc; }
 
-    /* Modal Reproductor */
+    /* Modal */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; overflow-y: auto; }
     .modal-content { position: relative; width: 92%; max-width: 950px; margin: 2% auto; background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
     .close-btn { position: absolute; top: 10px; right: 18px; color: #fff; font-size: 30px; cursor: pointer; z-index: 1001; font-weight: bold; }
 
-    /* Barra de Selección de Servidores */
+    /* Servidores */
     .server-selector { display: flex; gap: 8px; padding: 12px; background: #181818; justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #333; }
     .server-btn { background: #282828; color: #ccc; border: 1px solid #444; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; }
     .server-btn:hover, .server-btn.active { background: #e50914; color: #fff; border-color: #e50914; }
 
-    /* Barra de Control Rápido */
-    .quick-toolbar { background: #1f1f1f; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-wrap: wrap; gap: 10px; }
+    /* Control Rápido */
+    .quick-toolbar { background: #1f1f1f; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-wrap: wrap; gap: 10px; }
     .quick-toolbar span { font-size: 12px; color: #aaa; }
-    .next-server-btn { background: #e50914; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
-    .next-server-btn:hover { background: #b80710; }
+    .btn-group { display: flex; gap: 8px; }
+    .action-btn { background: #e50914; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; text-decoration: none; display: inline-block; }
+    .action-btn.secondary { background: #333; border: 1px solid #555; }
+    .action-btn:hover { opacity: 0.85; }
 
-    /* Contenedor del Reproductor */
+    /* Contenedor Video */
     iframe { width: 100%; height: 480px; border: none; background: #000; display: block; }
 
-    /* Panel de Series */
+    /* Series */
     .series-panel { padding: 15px; background: #161616; border-top: 1px solid #282828; }
     .series-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
     .series-title { font-size: 16px; font-weight: bold; color: #e50914; }
@@ -74,13 +76,11 @@
 
   <h1>Plataforma TV</h1>
 
-  <!-- Selector Películas / Series -->
   <div class="mode-switch">
     <button id="modeMovies" class="mode-btn active" onclick="cambiarModo('movie')">🎬 Películas</button>
     <button id="modeSeries" class="mode-btn" onclick="cambiarModo('tv')">📺 Series</button>
   </div>
 
-  <!-- Buscador -->
   <div class="search-container">
     <div class="search-box">
       <input type="text" id="searchInput" class="search-input" placeholder="Buscar película o serie..." onkeypress="handleKeyPress(event)">
@@ -88,13 +88,11 @@
     </div>
   </div>
 
-  <!-- Categorías -->
   <div class="categories" id="categoriesContainer"></div>
 
   <div id="infoCarga" class="loading-info">Cargando catálogo...</div>
   <div id="catalogo" class="grid"></div>
 
-  <!-- Paginación -->
   <div class="pagination">
     <button id="prevBtn" class="page-btn" onclick="cambiarPagina(-1)" disabled>Anterior</button>
     <span id="pageInfo" class="page-num">Página 1</span>
@@ -106,21 +104,18 @@
     <div class="modal-content">
       <span class="close-btn" onclick="cerrarReproductor()">&times;</span>
       
-      <!-- Selector de Servidores -->
       <div id="serverContainer" class="server-selector"></div>
 
-      <!-- Barra de Control Rápido -->
       <div class="quick-toolbar">
-        <span>💡 <b>Tip:</b> Si no carga, presiona "Probar Siguiente Servidor" o selecciona el audio en la tuerca ⚙️ del video.</span>
-        <button class="next-server-btn" onclick="probarSiguienteServidor()">
-          ⏭️ Probar Siguiente Servidor
-        </button>
+        <span>💡 Si no reproduce en el cuadro, usa el botón de <b>Pestaña Nueva</b>.</span>
+        <div class="btn-group">
+          <button class="action-btn secondary" onclick="probarSiguienteServidor()">⏭️ Cambiar Servidor</button>
+          <a id="externalLink" href="#" target="_blank" class="action-btn">🔗 Abrir en Pestaña Nueva</a>
+        </div>
       </div>
 
-      <!-- Iframe del Video -->
       <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
 
-      <!-- Panel de Temporadas y Episodios (Solo Series) -->
       <div id="seriesPanel" class="series-panel" style="display: none;">
         <div class="series-header">
           <span id="seriesTitle" class="series-title">Episodios</span>
@@ -137,56 +132,40 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    // NUEVA LISTA DE SERVIDORES ACTUALIZADOS Y FUNCIONALES
+    // LISTA REVISADA CON ENDPOINTS DE ALTA DISPONIBILIDAD
     const SERVIDORES = [
       {
-        nombre: "Servidor 1 ★ (VidSrc.me - Alta Estabilidad)",
+        nombre: "Opción 1 (AutoEmbed - Principal)",
+        getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`,
+        getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}`
+      },
+      {
+        nombre: "Opción 2 (VidSrc.cc - Estable)",
+        getMovie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
+        getTv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`
+      },
+      {
+        nombre: "Opción 3 (MultiEmbed - Múltiples Fuentes)",
+        getMovie: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
+        getTv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`
+      },
+      {
+        nombre: "Opción 4 (VidSrc.me - Espejo Directo)",
         getMovie: (id) => `https://vidsrc.me/embed/movie?tmdb=${id}`,
         getTv: (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
       },
       {
-        nombre: "Servidor 2 ★ (WarezCDN - Opción Latino/Castellano)",
+        nombre: "Opción 5 (WarezCDN - Latino / Castellano)",
         getMovie: (id) => `https://embed.warezcdn.com/filme/${id}`,
         getTv: (id, s, e) => `https://embed.warezcdn.com/serie/${id}/${s}/${e}`
       },
       {
-        nombre: "Servidor 3 (Embed.su - Multilenguaje)",
-        getMovie: (id) => `https://embed.su/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "Servidor 4 (VidSrc.pro - Rápido)",
-        getMovie: (id) => `https://vidsrc.pro/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "Servidor 5 (MoviesAPI Club - Latino / Sub)",
+        nombre: "Opción 6 (MoviesAPI - Respaldo)",
         getMovie: (id) => `https://moviesapi.club/movie/${id}`,
         getTv: (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`
-      },
-      {
-        nombre: "Servidor 6 (VidSrc.icu - Respaldo TMDB)",
-        getMovie: (id) => `https://vidsrc.icu/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://vidsrc.icu/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "Servidor 7 (VidLink - Multi Audio)",
-        getMovie: (id) => `https://vidlink.pro/movie/${id}?primaryColor=e50914`,
-        getTv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=e50914`
-      },
-      {
-        nombre: "Servidor 8 (SmashyStream - Mirror Global)",
-        getMovie: (id) => `https://player.smashy.stream/movie/${id}`,
-        getTv: (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}`
-      },
-      {
-        nombre: "Servidor 9 (2Embed - Mirror Secundario)",
-        getMovie: (id) => `https://www.2embed.cc/embed/${id}`,
-        getTv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
       }
     ];
 
-    // Estado global
     let modoActual = 'movie'; 
     let categoriaActual = 'populares';
     let busquedaActual = '';
@@ -313,7 +292,7 @@
 
       } catch (err) {
         console.error(err);
-        infoCarga.innerText = "Error al conectar con el servicio.";
+        infoCarga.innerText = "Error al conectar con la API.";
       }
     }
 
@@ -391,24 +370,24 @@
 
     function probarSiguienteServidor() {
       servidorActivoIdx = (servidorActivoIdx + 1) % SERVIDORES.length;
-      
-      const botones = document.querySelectorAll('.server-btn');
-      botones.forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === servidorActivoIdx);
-      });
-
+      renderizarBotonesServidores();
       actualizarIframe();
     }
 
     function actualizarIframe() {
       const iframe = document.getElementById('embedFrame');
+      const linkExt = document.getElementById('externalLink');
       const srv = SERVIDORES[servidorActivoIdx];
 
+      let targetUrl = "";
       if (modoActual === 'movie') {
-        iframe.src = srv.getMovie(itemActivo.id);
+        targetUrl = srv.getMovie(itemActivo.id);
       } else {
-        iframe.src = srv.getTv(itemActivo.id, temporadaActiva, episodioActivo);
+        targetUrl = srv.getTv(itemActivo.id, temporadaActiva, episodioActivo);
       }
+
+      iframe.src = targetUrl;
+      linkExt.href = targetUrl;
     }
 
     // --- TEMPORADAS Y EPISODIOS ---
@@ -490,7 +469,6 @@
       itemActivo = null;
     }
 
-    // Inicialización
     renderizarCategorias();
     cargarCatalogo();
   </script>
