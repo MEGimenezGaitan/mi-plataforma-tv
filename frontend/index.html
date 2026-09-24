@@ -50,10 +50,16 @@
     .server-btn { background: #282828; color: #ccc; border: 1px solid #444; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; }
     .server-btn:hover, .server-btn.active { background: #e50914; color: #fff; border-color: #e50914; }
 
+    /* Barra de Control Rápido */
+    .quick-toolbar { background: #1f1f1f; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-wrap: wrap; gap: 10px; }
+    .quick-toolbar span { font-size: 12px; color: #aaa; }
+    .next-server-btn { background: #e50914; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
+    .next-server-btn:hover { background: #b80710; }
+
     /* Contenedor del Reproductor */
     iframe { width: 100%; height: 480px; border: none; background: #000; display: block; }
 
-    /* Panel de Series (Temporadas y Episodios - Estilo XuperTV / MXL) */
+    /* Panel de Series */
     .series-panel { padding: 15px; background: #161616; border-top: 1px solid #282828; }
     .series-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
     .series-title { font-size: 16px; font-weight: bold; color: #e50914; }
@@ -103,6 +109,14 @@
       <!-- Selector de Servidores -->
       <div id="serverContainer" class="server-selector"></div>
 
+      <!-- Barra de Control Rápido -->
+      <div class="quick-toolbar">
+        <span>💡 <b>Consejo:</b> Si no reproduce o está en inglés, cambia la pista de audio en la tuerca ⚙️ del video o prueba otro servidor.</span>
+        <button class="next-server-btn" onclick="probarSiguienteServidor()">
+          ⏭️ Probar Siguiente Servidor
+        </button>
+      </div>
+
       <!-- Iframe del Video -->
       <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
 
@@ -123,47 +137,47 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    // 8 SERVIDORES REDUNDANTES (Películas y Series)
+    // 8 SERVIDORES OPTIMIZADOS PARA ALTA VELOCIDAD Y ESPAÑOL LATINO
     const SERVIDORES = [
       {
-        nombre: "Servidor 1 (VidLink)",
-        getMovie: (id) => `https://vidlink.pro/movie/${id}?primaryColor=e50914&multiLang=true`,
-        getTv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=e50914&multiLang=true`
+        nombre: "Servidor 1 ★ (VidLink - Latino / Multi Audio)",
+        getMovie: (id) => `https://vidlink.pro/movie/${id}?primaryColor=e50914&multiLang=true&fallbackLang=es`,
+        getTv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=e50914&multiLang=true&fallbackLang=es`
       },
       {
-        nombre: "Servidor 2 (VidSrc CC)",
-        getMovie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}?autoGain=true`,
-        getTv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "Servidor 3 (Embed.su)",
+        nombre: "Servidor 2 ★ (Embed.su - Selector Audio ES)",
         getMovie: (id) => `https://embed.su/embed/movie/${id}`,
         getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`
       },
       {
-        nombre: "Servidor 4 (AutoEmbed)",
+        nombre: "Servidor 3 (AutoEmbed - Forzar Español)",
         getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}?lang=es`,
         getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?lang=es`
       },
       {
-        nombre: "Servidor 5 (2Embed)",
-        getMovie: (id) => `https://www.2embed.cc/embed/${id}`,
-        getTv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
+        nombre: "Servidor 4 (RiveStream - Carga Rápida)",
+        getMovie: (id) => `https://rivestream.live/embed?type=movie&id=${id}`,
+        getTv: (id, s, e) => `https://rivestream.live/embed?type=tv&id=${id}&season=${s}&episode=${e}`
       },
       {
-        nombre: "Servidor 6 (VidCore)",
-        getMovie: (id) => `https://vidcore.org/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://vidcore.org/embed/series/${id}/${s}/${e}`
+        nombre: "Servidor 5 (VidSrc VIP - Servidor Premium)",
+        getMovie: (id) => `https://vidsrc.vip/embed/movie/${id}`,
+        getTv: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}`
       },
       {
-        nombre: "Servidor 7 (MultiEmbed)",
+        nombre: "Servidor 6 (VidSrc CC - Multi Audio + Subs)",
+        getMovie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}?autoGain=true&lang=es`,
+        getTv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}?lang=es`
+      },
+      {
+        nombre: "Servidor 7 (MultiEmbed - Espejo Secundario)",
         getMovie: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
         getTv: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`
       },
       {
-        nombre: "Servidor 8 (SmashyStream)",
-        getMovie: (id) => `https://embed.smashystream.com/playere.php?tmdb=${id}`,
-        getTv: (id, s, e) => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}`
+        nombre: "Servidor 8 (2Embed - Respaldo)",
+        getMovie: (id) => `https://www.2embed.cc/embed/${id}`,
+        getTv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
       }
     ];
 
@@ -241,11 +255,11 @@
       let buildUrl = (p) => {
         const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
         if (busquedaActual) {
-          return `https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&language=es-ES&query=${encodeURIComponent(busquedaActual)}&page=${p}`;
+          return `https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&query=${encodeURIComponent(busquedaActual)}&page=${p}`;
         } else if (categoriaActual !== 'populares') {
-          return `https://api.themoviedb.org/3/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=es-ES&with_genres=${categoriaActual}&page=${p}`;
+          return `https://api.themoviedb.org/3/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&with_genres=${categoriaActual}&page=${p}`;
         } else {
-          return `https://api.themoviedb.org/3/${endpoint}/popular?api_key=${TMDB_API_KEY}&language=es-ES&page=${p}`;
+          return `https://api.themoviedb.org/3/${endpoint}/popular?api_key=${TMDB_API_KEY}&language=es-MX&page=${p}`;
         }
       };
 
@@ -374,6 +388,17 @@
       actualizarIframe();
     }
 
+    function probarSiguienteServidor() {
+      servidorActivoIdx = (servidorActivoIdx + 1) % SERVIDORES.length;
+      
+      const botones = document.querySelectorAll('.server-btn');
+      botones.forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === servidorActivoIdx);
+      });
+
+      actualizarIframe();
+    }
+
     function actualizarIframe() {
       const iframe = document.getElementById('embedFrame');
       const srv = SERVIDORES[servidorActivoIdx];
@@ -385,14 +410,14 @@
       }
     }
 
-    // --- LÓGICA DE TEMPORADAS Y EPISODIOS (ESTILO XUPERTV/MXL) ---
+    // --- LÓGICA DE TEMPORADAS Y EPISODIOS ---
 
     async function cargarEstructuraSerie(seriesId) {
       const selectTemp = document.getElementById('seasonSelect');
       selectTemp.innerHTML = '<option>Cargando...</option>';
 
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_API_KEY}&language=es-ES`);
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_API_KEY}&language=es-MX`);
         const data = await res.json();
 
         selectTemp.innerHTML = '';
@@ -424,7 +449,7 @@
       gridEps.innerHTML = '<div>Cargando episodios...</div>';
 
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${itemActivo.id}/season/${temporadaActiva}?api_key=${TMDB_API_KEY}&language=es-ES`);
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${itemActivo.id}/season/${temporadaActiva}?api_key=${TMDB_API_KEY}&language=es-MX`);
         const data = await res.json();
 
         gridEps.innerHTML = '';
