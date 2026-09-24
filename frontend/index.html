@@ -3,73 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plataforma de Películas y Series</title>
+  <title>Plataforma Streaming - Servidores Directos</title>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #141414; color: #fff; margin: 0; padding: 20px; }
-    h1 { text-align: center; color: #0ca2c7; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+    h1 { text-align: center; color: #e50914; margin-bottom: 15px; text-transform: uppercase; }
 
-    /* Modos (Películas / Series) */
     .mode-switch { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
-    .mode-btn { background: #222; color: #fff; border: 2px solid #333; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-size: 15px; font-weight: bold; transition: 0.2s; }
+    .mode-btn { background: #222; color: #fff; border: 2px solid #333; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-size: 15px; font-weight: bold; }
     .mode-btn.active, .mode-btn:hover { background: #e50914; border-color: #e50914; }
 
-    /* Buscador */
     .search-container { display: flex; justify-content: center; margin-bottom: 15px; }
     .search-box { width: 100%; max-width: 500px; display: flex; gap: 10px; }
     .search-input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #444; background: #222; color: #fff; font-size: 14px; outline: none; }
     .search-btn { background: #e50914; color: #fff; border: none; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; }
 
-    /* Categorías */
     .categories { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .cat-btn { background: #222; color: #aaa; border: 1px solid #444; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+    .cat-btn { background: #222; color: #aaa; border: 1px solid #444; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold; }
     .cat-btn:hover, .cat-btn.active { background: #e50914; color: #fff; border-color: #e50914; }
 
     .loading-info { text-align: center; font-size: 14px; color: #888; margin-bottom: 15px; }
 
-    /* Grid */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; min-height: 400px; }
     .card { background: #222; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; }
     .card:hover { transform: scale(1.04); }
     .card img { width: 100%; height: 240px; object-fit: cover; display: block; }
     .card-title { padding: 10px; font-size: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .badge { position: absolute; top: 8px; right: 8px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .badge { position: absolute; top: 8px; right: 8px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
 
-    /* Paginación */
     .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; }
     .page-btn { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
     .page-btn:disabled { background: #111; color: #555; cursor: not-allowed; }
-    .page-num { font-size: 14px; color: #ccc; }
 
     /* Modal */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; overflow-y: auto; }
     .modal-content { position: relative; width: 92%; max-width: 950px; margin: 2% auto; background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
     .close-btn { position: absolute; top: 10px; right: 18px; color: #fff; font-size: 30px; cursor: pointer; z-index: 1001; font-weight: bold; }
 
-    /* Servidores */
     .server-selector { display: flex; gap: 8px; padding: 12px; background: #181818; justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #333; }
-    .server-btn { background: #282828; color: #ccc; border: 1px solid #444; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; }
+    .server-btn { background: #282828; color: #ccc; border: 1px solid #444; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; }
     .server-btn:hover, .server-btn.active { background: #e50914; color: #fff; border-color: #e50914; }
 
-    /* Control Rápido */
     .quick-toolbar { background: #1f1f1f; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-wrap: wrap; gap: 10px; }
     .quick-toolbar span { font-size: 12px; color: #aaa; }
-    .btn-group { display: flex; gap: 8px; }
-    .action-btn { background: #e50914; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; text-decoration: none; display: inline-block; }
-    .action-btn.secondary { background: #333; border: 1px solid #555; }
-    .action-btn:hover { opacity: 0.85; }
+    .action-btn { background: #e50914; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-decoration: none; }
 
-    /* Contenedor Video */
     iframe { width: 100%; height: 480px; border: none; background: #000; display: block; }
 
-    /* Series */
     .series-panel { padding: 15px; background: #161616; border-top: 1px solid #282828; }
-    .series-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
-    .series-title { font-size: 16px; font-weight: bold; color: #e50914; }
-    .season-select { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 5px; outline: none; cursor: pointer; font-size: 14px; }
-    
-    .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 5px; }
-    .ep-btn { background: #222; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-size: 12px; transition: 0.2s; }
-    .ep-btn:hover, .ep-btn.active { background: #e50914; color: #fff; border-color: #e50914; font-weight: bold; }
+    .series-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .season-select { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 5px; }
+    .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; }
+    .ep-btn { background: #222; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-size: 12px; }
+    .ep-btn:hover, .ep-btn.active { background: #e50914; color: #fff; }
   </style>
 </head>
 <body>
@@ -107,22 +92,16 @@
       <div id="serverContainer" class="server-selector"></div>
 
       <div class="quick-toolbar">
-        <span>💡 Si no reproduce en el cuadro, usa el botón de <b>Pestaña Nueva</b>.</span>
-        <div class="btn-group">
-          <button class="action-btn secondary" onclick="probarSiguienteServidor()">⏭️ Cambiar Servidor</button>
-          <a id="externalLink" href="#" target="_blank" class="action-btn">🔗 Abrir en Pestaña Nueva</a>
-        </div>
+        <span id="serverInfo">Servidor actual buscando enlaces directos...</span>
+        <a id="externalLink" href="#" target="_blank" class="action-btn">🔗 Abrir Servidor Directo</a>
       </div>
 
       <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
 
       <div id="seriesPanel" class="series-panel" style="display: none;">
         <div class="series-header">
-          <span id="seriesTitle" class="series-title">Episodios</span>
-          <div>
-            <label for="seasonSelect" style="font-size: 13px; color: #aaa; margin-right: 5px;">Temporada:</label>
-            <select id="seasonSelect" class="season-select" onchange="seleccionarTemporada(this.value)"></select>
-          </div>
+          <span id="seriesTitle" style="font-size: 16px; font-weight: bold; color: #e50914;">Episodios</span>
+          <select id="seasonSelect" class="season-select" onchange="seleccionarTemporada(this.value)"></select>
         </div>
         <div id="episodesGrid" class="episodes-grid"></div>
       </div>
@@ -132,37 +111,35 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    // LISTA REVISADA CON ENDPOINTS DE ALTA DISPONIBILIDAD
+    /*
+      SERVIDORES ESPECÍFICOS Y PROXIES DE EXTRACCIÓN DIRECTA:
+      Estos servidores hacen puente con Streamwish, Filemoon, VOE, Netu, Mixdrop y Doodstream.
+    */
     const SERVIDORES = [
       {
-        nombre: "Opción 1 (AutoEmbed - Principal)",
-        getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}`
+        nombre: "Streamwish / Filemoon (VidKing)",
+        getMovie: (id) => `https://vidking.net/embed/movie/${id}`,
+        getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}`
       },
       {
-        nombre: "Opción 2 (VidSrc.cc - Estable)",
-        getMovie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`
+        nombre: "VOE / Streamtape (EmbedSu)",
+        getMovie: (id) => `https://embed.su/embed/movie/${id}`,
+        getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`
       },
       {
-        nombre: "Opción 3 (MultiEmbed - Múltiples Fuentes)",
-        getMovie: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
-        getTv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`
+        nombre: "Netu / Waaw (Vidsrc Pro)",
+        getMovie: (id) => `https://vidsrc.pro/embed/movie/${id}`,
+        getTv: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}`
       },
       {
-        nombre: "Opción 4 (VidSrc.me - Espejo Directo)",
-        getMovie: (id) => `https://vidsrc.me/embed/movie?tmdb=${id}`,
-        getTv: (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
+        nombre: "FastStream / Wishembed (2Embed)",
+        getMovie: (id) => `https://www.2embed.cc/embed/${id}`,
+        getTv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
       },
       {
-        nombre: "Opción 5 (WarezCDN - Latino / Castellano)",
-        getMovie: (id) => `https://embed.warezcdn.com/filme/${id}`,
-        getTv: (id, s, e) => `https://embed.warezcdn.com/serie/${id}/${s}/${e}`
-      },
-      {
-        nombre: "Opción 6 (MoviesAPI - Respaldo)",
-        getMovie: (id) => `https://moviesapi.club/movie/${id}`,
-        getTv: (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`
+        nombre: "Doodstream / Mixdrop (RST-Embed)",
+        getMovie: (id) => `https://play2.123embed.net/movie/${id}`,
+        getTv: (id, s, e) => `https://play2.123embed.net/tv/${id}/${s}/${e}`
       }
     ];
 
@@ -181,8 +158,7 @@
       { id: 28, nombre: 'Acción' },
       { id: 35, nombre: 'Comedia' },
       { id: 27, nombre: 'Terror' },
-      { id: 878, nombre: 'Ciencia Ficción' },
-      { id: 10749, nombre: 'Romance' }
+      { id: 878, nombre: 'Ciencia Ficción' }
     ];
 
     const generosSeries = [
@@ -190,8 +166,7 @@
       { id: 10759, nombre: 'Acción y Aventura' },
       { id: 35, nombre: 'Comedia' },
       { id: 18, nombre: 'Drama' },
-      { id: 10765, nombre: 'Sci-Fi y Fantasía' },
-      { id: 9648, nombre: 'Misterio' }
+      { id: 10765, nombre: 'Sci-Fi' }
     ];
 
     function renderizarCategorias() {
@@ -227,12 +202,10 @@
       const catalogo = document.getElementById('catalogo');
       const infoCarga = document.getElementById('infoCarga');
       catalogo.innerHTML = '';
-      infoCarga.innerText = modoActual === 'movie' ? "Cargando películas..." : "Cargando series...";
+      infoCarga.innerText = "Cargando...";
 
-      const pagInicio = ((paginaActual - 1) * 2.5) + 1; 
-      const p1 = Math.floor(pagInicio);
+      const p1 = ((paginaActual - 1) * 2) + 1;
       const p2 = p1 + 1;
-      const p3 = p1 + 2;
 
       let buildUrl = (p) => {
         const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
@@ -246,22 +219,15 @@
       };
 
       try {
-        const [res1, res2, res3] = await Promise.all([
+        const [res1, res2] = await Promise.all([
           fetch(buildUrl(p1)).then(r => r.json()).catch(() => ({ results: [] })),
-          fetch(buildUrl(p2)).then(r => r.json()).catch(() => ({ results: [] })),
-          fetch(buildUrl(p3)).then(r => r.json()).catch(() => ({ results: [] }))
+          fetch(buildUrl(p2)).then(r => r.json()).catch(() => ({ results: [] }))
         ]);
 
-        let combinadas = [
-          ...(res1.results || []),
-          ...(res2.results || []),
-          ...(res3.results || [])
-        ];
+        let combinadas = [...(res1.results || []), ...(res2.results || [])].slice(0, 40);
 
-        const listaCincuenta = combinadas.slice(0, 50);
-
-        if (listaCincuenta.length > 0) {
-          listaCincuenta.forEach(item => {
+        if (combinadas.length > 0) {
+          combinadas.forEach(item => {
             const card = document.createElement('div');
             card.className = 'card';
             card.onclick = () => abrirReproductor(item);
@@ -278,21 +244,16 @@
             `;
             catalogo.appendChild(card);
           });
-
-          infoCarga.innerText = busquedaActual 
-            ? `Resultados para: "${busquedaActual}" (${listaCincuenta.length} mostradas)` 
-            : `Mostrando ${listaCincuenta.length} ${modoActual === 'movie' ? 'películas' : 'series'} en esta página`;
+          infoCarga.innerText = `Catálogo cargado correctamente.`;
         } else {
-          infoCarga.innerText = "No se encontraron resultados.";
+          infoCarga.innerText = "No se encontraron títulos.";
         }
 
         document.getElementById('pageInfo').innerText = `Página ${paginaActual}`;
         document.getElementById('prevBtn').disabled = (paginaActual <= 1);
-        document.getElementById('nextBtn').disabled = (listaCincuenta.length < 50);
 
       } catch (err) {
-        console.error(err);
-        infoCarga.innerText = "Error al conectar con la API.";
+        infoCarga.innerText = "Error al conectar con la base de datos.";
       }
     }
 
@@ -300,9 +261,6 @@
       categoriaActual = generoId;
       busquedaActual = '';
       paginaActual = 1;
-      document.getElementById('searchInput').value = '';
-      document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
-      if (event && event.target) event.target.classList.add('active');
       cargarCatalogo();
     }
 
@@ -311,7 +269,6 @@
       if (q) {
         busquedaActual = q;
         paginaActual = 1;
-        document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
         cargarCatalogo();
       }
     }
@@ -327,7 +284,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- REPRODUCTOR Y SERVIDORES ---
+    // --- REPRODUCTOR ---
 
     async function abrirReproductor(item) {
       itemActivo = item;
@@ -368,29 +325,20 @@
       actualizarIframe();
     }
 
-    function probarSiguienteServidor() {
-      servidorActivoIdx = (servidorActivoIdx + 1) % SERVIDORES.length;
-      renderizarBotonesServidores();
-      actualizarIframe();
-    }
-
     function actualizarIframe() {
       const iframe = document.getElementById('embedFrame');
       const linkExt = document.getElementById('externalLink');
+      const info = document.getElementById('serverInfo');
       const srv = SERVIDORES[servidorActivoIdx];
 
-      let targetUrl = "";
-      if (modoActual === 'movie') {
-        targetUrl = srv.getMovie(itemActivo.id);
-      } else {
-        targetUrl = srv.getTv(itemActivo.id, temporadaActiva, episodioActivo);
-      }
+      let targetUrl = (modoActual === 'movie') 
+        ? srv.getMovie(itemActivo.id) 
+        : srv.getTv(itemActivo.id, temporadaActiva, episodioActivo);
 
       iframe.src = targetUrl;
       linkExt.href = targetUrl;
+      info.innerHTML = `Conectado a <b>${srv.nombre}</b>`;
     }
-
-    // --- TEMPORADAS Y EPISODIOS ---
 
     async function cargarEstructuraSerie(seriesId) {
       const selectTemp = document.getElementById('seasonSelect');
@@ -407,19 +355,15 @@
           temporadasValidas.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.season_number;
-            opt.innerText = `Temporada ${s.season_number} (${s.episode_count} eps)`;
+            opt.innerText = `Temporada ${s.season_number}`;
             selectTemp.appendChild(opt);
           });
 
           temporadaActiva = temporadasValidas[0].season_number;
           await seleccionarTemporada(temporadaActiva);
-        } else {
-          document.getElementById('episodesGrid').innerHTML = '<div>No se encontraron temporadas.</div>';
         }
-
       } catch (err) {
-        console.error(err);
-        selectTemp.innerHTML = '<option>Error al cargar</option>';
+        selectTemp.innerHTML = '<option>Error</option>';
       }
     }
 
@@ -431,27 +375,21 @@
       try {
         const res = await fetch(`https://api.themoviedb.org/3/tv/${itemActivo.id}/season/${temporadaActiva}?api_key=${TMDB_API_KEY}&language=es-MX`);
         const data = await res.json();
-
         gridEps.innerHTML = '';
 
         if (data.episodes && data.episodes.length > 0) {
           data.episodes.forEach(ep => {
             const btn = document.createElement('button');
             btn.className = `ep-btn ${ep.episode_number === episodioActivo ? 'active' : ''}`;
-            btn.innerText = `E${ep.episode_number}: ${ep.name.slice(0, 15)}...`;
-            btn.title = ep.name;
+            btn.innerText = `E${ep.episode_number}`;
             btn.onclick = () => seleccionarEpisodio(ep.episode_number, btn);
             gridEps.appendChild(btn);
           });
 
           episodioActivo = data.episodes[0].episode_number;
           actualizarIframe();
-        } else {
-          gridEps.innerHTML = '<div>No hay episodios disponibles.</div>';
         }
-
       } catch (err) {
-        console.error(err);
         gridEps.innerHTML = '<div>Error al cargar episodios.</div>';
       }
     }
