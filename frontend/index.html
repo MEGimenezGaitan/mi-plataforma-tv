@@ -3,88 +3,353 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plataforma Streaming - Servidores Directos</title>
+  <title>Streaming Net - Películas y Series</title>
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #141414; color: #fff; margin: 0; padding: 20px; }
-    h1 { text-align: center; color: #e50914; margin-bottom: 15px; text-transform: uppercase; }
+    :root {
+      --bg-color: #141414;
+      --netflix-red: #e50914;
+      --text-color: #ffffff;
+      --gray-text: #b3b3b3;
+    }
 
-    .mode-switch { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
-    .mode-btn { background: #222; color: #fff; border: 2px solid #333; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-size: 15px; font-weight: bold; }
-    .mode-btn.active, .mode-btn:hover { background: #e50914; border-color: #e50914; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .search-container { display: flex; justify-content: center; margin-bottom: 15px; }
-    .search-box { width: 100%; max-width: 500px; display: flex; gap: 10px; }
-    .search-input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #444; background: #222; color: #fff; font-size: 14px; outline: none; }
-    .search-btn { background: #e50914; color: #fff; border: none; padding: 10px 22px; border-radius: 25px; cursor: pointer; font-weight: bold; }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      overflow-x: hidden;
+    }
 
-    .categories { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .cat-btn { background: #222; color: #aaa; border: 1px solid #444; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold; }
-    .cat-btn:hover, .cat-btn.active { background: #e50914; color: #fff; border-color: #e50914; }
+    /* Barra de Navegación */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 70px;
+      padding: 0 4%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+      z-index: 100;
+      transition: background-color 0.3s;
+    }
 
-    .loading-info { text-align: center; font-size: 14px; color: #888; margin-bottom: 15px; }
+    .navbar.scrolled {
+      background-color: #141414;
+    }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; min-height: 400px; }
-    .card { background: #222; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; }
-    .card:hover { transform: scale(1.04); }
-    .card img { width: 100%; height: 240px; object-fit: cover; display: block; }
-    .card-title { padding: 10px; font-size: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .badge { position: absolute; top: 8px; right: 8px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+    .logo {
+      color: var(--netflix-red);
+      font-size: 24px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
 
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; }
-    .page-btn { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    .page-btn:disabled { background: #111; color: #555; cursor: not-allowed; }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
 
-    /* Modal */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; overflow-y: auto; }
-    .modal-content { position: relative; width: 92%; max-width: 950px; margin: 2% auto; background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
-    .close-btn { position: absolute; top: 10px; right: 18px; color: #fff; font-size: 30px; cursor: pointer; z-index: 1001; font-weight: bold; }
+    .nav-btn {
+      background: transparent;
+      color: var(--text-color);
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
 
-    .server-selector { display: flex; gap: 8px; padding: 12px; background: #181818; justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #333; }
-    .server-btn { background: #282828; color: #ccc; border: 1px solid #444; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; }
-    .server-btn:hover, .server-btn.active { background: #e50914; color: #fff; border-color: #e50914; }
+    .nav-btn.active, .nav-btn:hover {
+      color: var(--netflix-red);
+      font-weight: bold;
+    }
 
-    .quick-toolbar { background: #1f1f1f; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-wrap: wrap; gap: 10px; }
-    .quick-toolbar span { font-size: 12px; color: #aaa; }
-    .action-btn { background: #e50914; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-decoration: none; }
+    .search-box-nav {
+      display: flex;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 5px 10px;
+      align-items: center;
+    }
+
+    .search-input-nav {
+      background: transparent;
+      border: none;
+      color: #fff;
+      outline: none;
+      font-size: 13px;
+      width: 180px;
+    }
+
+    /* Banner Hero Destacado */
+    .hero {
+      position: relative;
+      height: 75vh;
+      width: 100%;
+      background-size: cover;
+      background-position: center top;
+      display: flex;
+      align-items: center;
+      padding: 0 4%;
+      margin-bottom: 30px;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(77deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%),
+                  linear-gradient(to top, #141414 0%, rgba(20,20,20,0) 60%);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 600px;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--gray-text);
+      line-height: 1.4;
+      margin-bottom: 20px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-play {
+      background-color: #fff;
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-play:hover { background-color: rgba(255,255,255,0.75); }
+
+    .btn-info {
+      background-color: rgba(109, 109, 110, 0.7);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
+
+    /* Contenedor de Carruseles */
+    .catalog-container {
+      padding: 0 4%;
+      margin-bottom: 50px;
+    }
+
+    .row-section {
+      margin-bottom: 35px;
+    }
+
+    .row-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #e5e5e5;
+    }
+
+    .row-posters {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      padding-bottom: 15px;
+    }
+
+    .row-posters::-webkit-scrollbar {
+      height: 6px;
+    }
+    .row-posters::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 3px;
+    }
+
+    .card {
+      flex: 0 0 180px;
+      height: 270px;
+      background-color: #222;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.08);
+      z-index: 10;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+    }
+
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-title-overlay {
+      position: absolute;
+      bottom: 0; left: 0; width: 100%;
+      padding: 15px 10px 10px;
+      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Modal Reproductor Estilo Netflix */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      position: relative;
+      width: 90%;
+      max-width: 900px;
+      margin: 40px auto;
+      background: #181818;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+      border: 1px solid #333;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px; right: 20px;
+      color: #fff; font-size: 28px;
+      cursor: pointer; z-index: 1001;
+      background: rgba(0,0,0,0.5);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .server-selector {
+      display: flex; gap: 8px; padding: 12px;
+      background: #1f1f1f; justify-content: center;
+      flex-wrap: wrap; border-bottom: 1px solid #333;
+    }
+
+    .server-btn {
+      background: #282828; color: #ccc; border: 1px solid #444;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-weight: 600;
+    }
+    .server-btn:hover, .server-btn.active {
+      background: var(--netflix-red); color: #fff; border-color: var(--netflix-red);
+    }
+
+    .quick-toolbar {
+      background: #222; padding: 10px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--gray-text); border-bottom: 1px solid #333;
+    }
+
+    .action-btn {
+      background: var(--netflix-red); color: #fff; text-decoration: none;
+      padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 12px;
+    }
 
     iframe { width: 100%; height: 480px; border: none; background: #000; display: block; }
 
-    .series-panel { padding: 15px; background: #161616; border-top: 1px solid #282828; }
-    .series-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .season-select { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 5px; }
-    .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; }
-    .ep-btn { background: #222; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-size: 12px; }
-    .ep-btn:hover, .ep-btn.active { background: #e50914; color: #fff; }
+    .series-panel { padding: 20px; background: #141414; border-top: 1px solid #333; }
+    .season-select { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; outline: none; }
+    .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; margin-top: 15px; }
+    .ep-btn { background: #222; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 4px; cursor: pointer; text-align: center; font-size: 12px; }
+    .ep-btn:hover, .ep-btn.active { background: var(--netflix-red); color: #fff; border-color: var(--netflix-red); }
+
+    @media(max-width: 768px) {
+      .hero-title { font-size: 28px; }
+      .card { flex: 0 0 130px; height: 195px; }
+      iframe { height: 260px; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>Plataforma TV</h1>
-
-  <div class="mode-switch">
-    <button id="modeMovies" class="mode-btn active" onclick="cambiarModo('movie')">🎬 Películas</button>
-    <button id="modeSeries" class="mode-btn" onclick="cambiarModo('tv')">📺 Series</button>
-  </div>
-
-  <div class="search-container">
-    <div class="search-box">
-      <input type="text" id="searchInput" class="search-input" placeholder="Buscar película o serie..." onkeypress="handleKeyPress(event)">
-      <button class="search-btn" onclick="ejecutarBusqueda()">Buscar</button>
+  <!-- Barra de Navegación -->
+  <div class="navbar" id="navbar">
+    <div class="logo">StreamingNet</div>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="cambiarModo('movie')">Películas</button>
+      <button class="nav-btn" onclick="cambiarModo('tv')">Series</button>
+      <div class="search-box-nav">
+        <input type="text" id="searchInput" class="search-input-nav" placeholder="Títulos, personas..." onkeypress="handleKeyPress(event)">
+      </div>
     </div>
   </div>
 
-  <div class="categories" id="categoriesContainer"></div>
-
-  <div id="infoCarga" class="loading-info">Cargando catálogo...</div>
-  <div id="catalogo" class="grid"></div>
-
-  <div class="pagination">
-    <button id="prevBtn" class="page-btn" onclick="cambiarPagina(-1)" disabled>Anterior</button>
-    <span id="pageInfo" class="page-num">Página 1</span>
-    <button id="nextBtn" class="page-btn" onclick="cambiarPagina(1)">Siguiente</button>
+  <!-- Banner Hero Principal -->
+  <div class="hero" id="heroBanner">
+    <div class="hero-content">
+      <h1 class="hero-title" id="heroTitle">Cargando destacado...</h1>
+      <p class="hero-desc" id="heroDesc">Explora los contenidos más populares del catálogo actual.</p>
+      <div class="hero-buttons">
+        <button class="btn-play" id="heroPlayBtn">▶ Reproducir</button>
+        <button class="btn-info" id="heroInfoBtn">ℹ Más información</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Modal Reproductor -->
+  <!-- Contenedor General de Filas / Carruseles -->
+  <div class="catalog-container" id="catalogContainer">
+    <div style="text-align: center; color: #777; padding: 40px;">Cargando carruseles...</div>
+  </div>
+
+  <!-- Modal del Reproductor -->
   <div id="playerModal" class="modal">
     <div class="modal-content">
       <span class="close-btn" onclick="cerrarReproductor()">&times;</span>
@@ -92,15 +357,15 @@
       <div id="serverContainer" class="server-selector"></div>
 
       <div class="quick-toolbar">
-        <span id="serverInfo">Servidor actual buscando enlaces directos...</span>
-        <a id="externalLink" href="#" target="_blank" class="action-btn">🔗 Abrir Servidor Directo</a>
+        <span id="serverInfo">Selecciona un servidor alternativo si falla</span>
+        <a id="externalLink" href="#" target="_blank" class="action-btn">🔗 Pestaña Nueva</a>
       </div>
 
       <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
 
       <div id="seriesPanel" class="series-panel" style="display: none;">
-        <div class="series-header">
-          <span id="seriesTitle" style="font-size: 16px; font-weight: bold; color: #e50914;">Episodios</span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span id="seriesTitle" style="font-size: 16px; font-weight: bold; color: var(--netflix-red);">Episodios</span>
           <select id="seasonSelect" class="season-select" onchange="seleccionarTemporada(this.value)"></select>
         </div>
         <div id="episodesGrid" class="episodes-grid"></div>
@@ -111,180 +376,119 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    /*
-      SERVIDORES ESPECÍFICOS Y PROXIES DE EXTRACCIÓN DIRECTA:
-      Estos servidores hacen puente con Streamwish, Filemoon, VOE, Netu, Mixdrop y Doodstream.
-    */
     const SERVIDORES = [
-      {
-        nombre: "Streamwish / Filemoon (VidKing)",
-        getMovie: (id) => `https://vidking.net/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "VOE / Streamtape (EmbedSu)",
-        getMovie: (id) => `https://embed.su/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "Netu / Waaw (Vidsrc Pro)",
-        getMovie: (id) => `https://vidsrc.pro/embed/movie/${id}`,
-        getTv: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}`
-      },
-      {
-        nombre: "FastStream / Wishembed (2Embed)",
-        getMovie: (id) => `https://www.2embed.cc/embed/${id}`,
-        getTv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
-      },
-      {
-        nombre: "Doodstream / Mixdrop (RST-Embed)",
-        getMovie: (id) => `https://play2.123embed.net/movie/${id}`,
-        getTv: (id, s, e) => `https://play2.123embed.net/tv/${id}/${s}/${e}`
-      }
+      { nombre: "AutoEmbed", getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`, getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` },
+      { nombre: "VidKing", getMovie: (id) => `https://vidking.net/embed/movie/${id}`, getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}` },
+      { nombre: "VidSrc.cc", getMovie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`, getTv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}` },
+      { nombre: "EmbedSu", getMovie: (id) => `https://embed.su/embed/movie/${id}`, getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` }
     ];
 
-    let modoActual = 'movie'; 
-    let categoriaActual = 'populares';
-    let busquedaActual = '';
-    let paginaActual = 1;
-
+    let modoActual = 'movie';
     let itemActivo = null;
     let servidorActivoIdx = 0;
     let temporadaActiva = 1;
     let episodioActivo = 1;
 
-    const generosPeliculas = [
-      { id: 'populares', nombre: 'Populares' },
-      { id: 28, nombre: 'Acción' },
-      { id: 35, nombre: 'Comedia' },
-      { id: 27, nombre: 'Terror' },
-      { id: 878, nombre: 'Ciencia Ficción' }
-    ];
+    // Cambiar color de navbar al hacer scroll
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
 
-    const generosSeries = [
-      { id: 'populares', nombre: 'Populares' },
-      { id: 10759, nombre: 'Acción y Aventura' },
-      { id: 35, nombre: 'Comedia' },
-      { id: 18, nombre: 'Drama' },
-      { id: 10765, nombre: 'Sci-Fi' }
-    ];
+    async function inicializarApp() {
+      await cargarBannerHero();
+      await cargarCarruselesCategorias();
+    }
 
-    function renderizarCategorias() {
-      const container = document.getElementById('categoriesContainer');
+    async function cargarBannerHero() {
+      try {
+        const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
+        const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/popular?api_key=${TMDB_API_KEY}&language=es-MX`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          const destacado = data.results[0];
+          const backdrop = `https://image.tmdb.org/t/p/original${destacado.backdrop_path}`;
+          
+          document.getElementById('heroBanner').style.backgroundImage = `url(${backdrop})`;
+          document.getElementById('heroTitle').innerText = destacado.title || destacado.name;
+          document.getElementById('heroDesc').innerText = destacado.overview || "Sin descripción disponible.";
+          
+          document.getElementById('heroPlayBtn').onclick = () => abrirReproductor(destacado);
+          document.getElementById('heroInfoBtn').onclick = () => abrirReproductor(destacado);
+        }
+      } catch (err) {
+        console.error("Error al cargar banner", err);
+      }
+    }
+
+    async function cargarCarruselesCategorias() {
+      const container = document.getElementById('catalogContainer');
       container.innerHTML = '';
-      const lista = (modoActual === 'movie') ? generosPeliculas : generosSeries;
 
-      lista.forEach(item => {
-        const btn = document.createElement('button');
-        btn.className = `cat-btn ${item.id === categoriaActual ? 'active' : ''}`;
-        btn.innerText = item.nombre;
-        btn.onclick = (e) => filtrarCategoria(item.id, e);
-        container.appendChild(btn);
-      });
+      const categorias = modoActual === 'movie' ? [
+        { id: 'popular', nombre: 'Tendencias Actuales' },
+        { id: 'top_rated', nombre: 'Mejor Valoradas' },
+        { id: 'upcoming', nombre: 'Próximos Estrenos' }
+      ] : [
+        { id: 'popular', nombre: 'Series Populares' },
+        { id: 'top_rated', nombre: 'Críticamente Aclamadas' },
+        { id: 'on_the_air', nombre: 'En Emisión' }
+      ];
+
+      for (const cat of categorias) {
+        const rowSection = document.createElement('div');
+        rowSection.className = 'row-section';
+
+        const rowTitle = document.createElement('h2');
+        rowTitle.className = 'row-title';
+        rowTitle.innerText = cat.nombre;
+        rowSection.appendChild(rowTitle);
+
+        const rowPosters = document.createElement('div');
+        rowPosters.className = 'row-posters';
+
+        try {
+          const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
+          const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${cat.id}?api_key=${TMDB_API_KEY}&language=es-MX`);
+          const data = await res.json();
+
+          if (data.results) {
+            data.results.forEach(item => {
+              const card = document.createElement('div');
+              card.className = 'card';
+              card.onclick = () => abrirReproductor(item);
+
+              const titulo = item.title || item.name;
+              const poster = item.poster_path 
+                ? `https://image.tmdb.org/t/p/w500${item.poster_path}` 
+                : 'https://via.placeholder.com/500x750?text=Sin+Imagen';
+
+              card.innerHTML = `
+                <img src="${poster}" alt="${titulo}" loading="lazy">
+                <div class="card-title-overlay">${titulo}</div>
+              `;
+              rowPosters.appendChild(card);
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        rowSection.appendChild(rowPosters);
+        container.appendChild(rowSection);
+      }
     }
 
     function cambiarModo(nuevoModo) {
       if (modoActual === nuevoModo) return;
       modoActual = nuevoModo;
-      categoriaActual = 'populares';
-      busquedaActual = '';
-      paginaActual = 1;
-      document.getElementById('searchInput').value = '';
-
-      document.getElementById('modeMovies').classList.toggle('active', modoActual === 'movie');
-      document.getElementById('modeSeries').classList.toggle('active', modoActual === 'tv');
-
-      renderizarCategorias();
-      cargarCatalogo();
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.toLowerCase().includes(nuevoModo === 'movie' ? 'películas' : 'series')));
+      inicializarApp();
     }
-
-    async function cargarCatalogo() {
-      const catalogo = document.getElementById('catalogo');
-      const infoCarga = document.getElementById('infoCarga');
-      catalogo.innerHTML = '';
-      infoCarga.innerText = "Cargando...";
-
-      const p1 = ((paginaActual - 1) * 2) + 1;
-      const p2 = p1 + 1;
-
-      let buildUrl = (p) => {
-        const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
-        if (busquedaActual) {
-          return `https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&query=${encodeURIComponent(busquedaActual)}&page=${p}`;
-        } else if (categoriaActual !== 'populares') {
-          return `https://api.themoviedb.org/3/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&with_genres=${categoriaActual}&page=${p}`;
-        } else {
-          return `https://api.themoviedb.org/3/${endpoint}/popular?api_key=${TMDB_API_KEY}&language=es-MX&page=${p}`;
-        }
-      };
-
-      try {
-        const [res1, res2] = await Promise.all([
-          fetch(buildUrl(p1)).then(r => r.json()).catch(() => ({ results: [] })),
-          fetch(buildUrl(p2)).then(r => r.json()).catch(() => ({ results: [] }))
-        ]);
-
-        let combinadas = [...(res1.results || []), ...(res2.results || [])].slice(0, 40);
-
-        if (combinadas.length > 0) {
-          combinadas.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.onclick = () => abrirReproductor(item);
-
-            const titulo = item.title || item.name;
-            const poster = item.poster_path 
-              ? `https://image.tmdb.org/t/p/w500${item.poster_path}` 
-              : 'https://via.placeholder.com/500x750?text=Sin+Poster';
-
-            card.innerHTML = `
-              <span class="badge">${modoActual === 'movie' ? 'Película' : 'Serie'}</span>
-              <img src="${poster}" alt="${titulo}">
-              <div class="card-title">${titulo}</div>
-            `;
-            catalogo.appendChild(card);
-          });
-          infoCarga.innerText = `Catálogo cargado correctamente.`;
-        } else {
-          infoCarga.innerText = "No se encontraron títulos.";
-        }
-
-        document.getElementById('pageInfo').innerText = `Página ${paginaActual}`;
-        document.getElementById('prevBtn').disabled = (paginaActual <= 1);
-
-      } catch (err) {
-        infoCarga.innerText = "Error al conectar con la base de datos.";
-      }
-    }
-
-    function filtrarCategoria(generoId, event) {
-      categoriaActual = generoId;
-      busquedaActual = '';
-      paginaActual = 1;
-      cargarCatalogo();
-    }
-
-    function ejecutarBusqueda() {
-      const q = document.getElementById('searchInput').value.trim();
-      if (q) {
-        busquedaActual = q;
-        paginaActual = 1;
-        cargarCatalogo();
-      }
-    }
-
-    function handleKeyPress(e) {
-      if (e.key === 'Enter') ejecutarBusqueda();
-    }
-
-    function cambiarPagina(delta) {
-      paginaActual += delta;
-      if (paginaActual < 1) paginaActual = 1;
-      cargarCatalogo();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // --- REPRODUCTOR ---
 
     async function abrirReproductor(item) {
       itemActivo = item;
@@ -308,46 +512,39 @@
     function renderizarBotonesServidores() {
       const container = document.getElementById('serverContainer');
       container.innerHTML = '';
-
       SERVIDORES.forEach((srv, idx) => {
         const btn = document.createElement('button');
         btn.className = `server-btn ${idx === servidorActivoIdx ? 'active' : ''}`;
         btn.innerText = srv.nombre;
-        btn.onclick = () => cambiarServidor(idx, btn);
+        btn.onclick = () => {
+          servidorActivoIdx = idx;
+          document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          actualizarIframe();
+        };
         container.appendChild(btn);
       });
-    }
-
-    function cambiarServidor(index, btn) {
-      servidorActivoIdx = index;
-      document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      actualizarIframe();
     }
 
     function actualizarIframe() {
       const iframe = document.getElementById('embedFrame');
       const linkExt = document.getElementById('externalLink');
-      const info = document.getElementById('serverInfo');
       const srv = SERVIDORES[servidorActivoIdx];
 
-      let targetUrl = (modoActual === 'movie') 
+      let targetUrl = modoActual === 'movie' 
         ? srv.getMovie(itemActivo.id) 
         : srv.getTv(itemActivo.id, temporadaActiva, episodioActivo);
 
       iframe.src = targetUrl;
       linkExt.href = targetUrl;
-      info.innerHTML = `Conectado a <b>${srv.nombre}</b>`;
     }
 
     async function cargarEstructuraSerie(seriesId) {
       const selectTemp = document.getElementById('seasonSelect');
       selectTemp.innerHTML = '<option>Cargando...</option>';
-
       try {
         const res = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_API_KEY}&language=es-MX`);
         const data = await res.json();
-
         selectTemp.innerHTML = '';
         const temporadasValidas = (data.seasons || []).filter(s => s.season_number > 0);
 
@@ -358,7 +555,6 @@
             opt.innerText = `Temporada ${s.season_number}`;
             selectTemp.appendChild(opt);
           });
-
           temporadaActiva = temporadasValidas[0].season_number;
           await seleccionarTemporada(temporadaActiva);
         }
@@ -371,7 +567,6 @@
       temporadaActiva = parseInt(numTemporada);
       const gridEps = document.getElementById('episodesGrid');
       gridEps.innerHTML = '<div>Cargando episodios...</div>';
-
       try {
         const res = await fetch(`https://api.themoviedb.org/3/tv/${itemActivo.id}/season/${temporadaActiva}?api_key=${TMDB_API_KEY}&language=es-MX`);
         const data = await res.json();
@@ -381,24 +576,21 @@
           data.episodes.forEach(ep => {
             const btn = document.createElement('button');
             btn.className = `ep-btn ${ep.episode_number === episodioActivo ? 'active' : ''}`;
-            btn.innerText = `E${ep.episode_number}`;
-            btn.onclick = () => seleccionarEpisodio(ep.episode_number, btn);
+            btn.innerText = `E${ep.episode_number}: ${ep.name.substring(0, 12)}...`;
+            btn.onclick = () => {
+              episodioActivo = ep.episode_number;
+              document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              actualizarIframe();
+            };
             gridEps.appendChild(btn);
           });
-
           episodioActivo = data.episodes[0].episode_number;
           actualizarIframe();
         }
-      } catch (err) {
+      } catch (e) {
         gridEps.innerHTML = '<div>Error al cargar episodios.</div>';
       }
-    }
-
-    function seleccionarEpisodio(numEpisodio, btn) {
-      episodioActivo = numEpisodio;
-      document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      actualizarIframe();
     }
 
     function cerrarReproductor() {
@@ -407,8 +599,40 @@
       itemActivo = null;
     }
 
-    renderizarCategorias();
-    cargarCatalogo();
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') {
+        const query = document.getElementById('searchInput').value.trim();
+        if (query) buscarContenido(query);
+      }
+    }
+
+    async function buscarContenido(query) {
+      const container = document.getElementById('catalogContainer');
+      container.innerHTML = `<h2 class="row-title">Resultados para: "${query}"</h2>`;
+      const rowPosters = document.createElement('div');
+      rowPosters.className = 'row-posters';
+
+      const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
+      const res = await fetch(`https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+
+      if (data.results && data.results.length > 0) {
+        data.results.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.onclick = () => abrirReproductor(item);
+          const titulo = item.title || item.name;
+          const poster = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750?text=Sin+Imagen';
+          card.innerHTML = `<img src="${poster}"><div class="card-title-overlay">${titulo}</div>`;
+          rowPosters.appendChild(card);
+        });
+        container.appendChild(rowPosters);
+      } else {
+        container.innerHTML += '<p style="color:#888; padding:20px;">No se encontraron resultados.</p>';
+      }
+    }
+
+    inicializarApp();
   </script>
 </body>
 </html>
