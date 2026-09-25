@@ -4,14 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Streaming Net - Películas y Series (Latino)</title>
-  <!-- Reproductor HLS para flujos .m3u8 (Streamwish, Filemoon, etc.) -->
+  <!-- Reproductor HLS para flujos .m3u8 -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     :root {
-      --bg-color: #141414;
-      --netflix-red: #e50914;
+      --bg-color: #0b0f19;
+      --card-bg: #131b2e;
+      --primary-blue: #0075ff;
+      --accent-cyan: #00d2ff;
       --text-color: #ffffff;
-      --gray-text: #b3b3b3;
+      --gray-text: #94a3b8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,16 +31,17 @@
       top: 0; left: 0; width: 100%; height: 70px;
       padding: 0 4%;
       display: flex; align-items: center; justify-content: space-between;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(to bottom, rgba(11, 15, 25, 0.9) 0%, rgba(11, 15, 25, 0) 100%);
       z-index: 100;
       transition: background-color 0.3s;
     }
 
-    .navbar.scrolled { background-color: #141414; }
+    .navbar.scrolled { background-color: var(--bg-color); border-bottom: 1px solid #1e293b; }
 
     .logo {
-      color: var(--netflix-red); font-size: 24px; font-weight: bold;
+      color: var(--accent-cyan); font-size: 24px; font-weight: bold;
       text-transform: uppercase; letter-spacing: 2px; cursor: pointer;
+      text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
     }
 
     .nav-links { display: flex; gap: 20px; align-items: center; }
@@ -48,11 +51,11 @@
       cursor: pointer; font-size: 14px; font-weight: 500; transition: color 0.2s;
     }
 
-    .nav-btn.active, .nav-btn:hover { color: var(--netflix-red); font-weight: bold; }
+    .nav-btn.active, .nav-btn:hover { color: var(--accent-cyan); font-weight: bold; }
 
     .search-box-nav {
-      display: flex; background: rgba(0,0,0,0.6);
-      border: 1px solid #333; border-radius: 4px; padding: 5px 10px; align-items: center;
+      display: flex; background: rgba(19, 27, 46, 0.8);
+      border: 1px solid #1e293b; border-radius: 6px; padding: 5px 12px; align-items: center;
     }
 
     .search-input-nav {
@@ -68,13 +71,13 @@
 
     .hero::after {
       content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(77deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%),
-                  linear-gradient(to top, #141414 0%, rgba(20,20,20,0) 60%);
+      background: linear-gradient(77deg, rgba(11,15,25,0.95) 0%, rgba(11,15,25,0.2) 50%),
+                  linear-gradient(to top, var(--bg-color) 0%, rgba(11,15,25,0) 60%);
       z-index: 1;
     }
 
     .hero-content { position: relative; z-index: 2; max-width: 600px; }
-    .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); }
+    .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
     .hero-desc {
       font-size: 15px; color: var(--gray-text); line-height: 1.4; margin-bottom: 20px;
       display: -webkit-box; 
@@ -85,18 +88,20 @@
     .hero-buttons { display: flex; gap: 12px; }
 
     .btn-play {
-      background-color: #fff; color: #000; border: none; padding: 10px 24px;
-      border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; gap: 8px; transition: background 0.2s;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--primary-blue));
+      color: #fff; border: none; padding: 10px 24px;
+      border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: opacity 0.2s, transform 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 117, 255, 0.4);
     }
-    .btn-play:hover { background-color: rgba(255,255,255,0.75); }
+    .btn-play:hover { opacity: 0.9; transform: translateY(-2px); }
 
     .btn-info {
-      background-color: rgba(109, 109, 110, 0.7); color: #fff; border: none;
-      padding: 10px 24px; border-radius: 4px; font-weight: bold; font-size: 15px;
+      background-color: rgba(30, 41, 59, 0.8); color: #fff; border: 1px solid #334155;
+      padding: 10px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;
       cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;
     }
-    .btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
+    .btn-info:hover { background-color: rgba(51, 65, 85, 0.8); }
 
     /* Contenedor de Carruseles */
     .catalog-container { padding: 0 4%; margin-bottom: 50px; }
@@ -105,31 +110,32 @@
     .row-header {
       display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
     }
-    .row-title { font-size: 18px; font-weight: 700; color: #e5e5e5; }
+    .row-title { font-size: 18px; font-weight: 700; color: #f1f5f9; border-left: 3px solid var(--accent-cyan); padding-left: 10px; }
     
     .btn-ver-mas {
       background: transparent; border: none; color: var(--gray-text);
       font-size: 13px; font-weight: bold; cursor: pointer; transition: color 0.2s;
     }
-    .btn-ver-mas:hover { color: var(--netflix-red); }
+    .btn-ver-mas:hover { color: var(--accent-cyan); }
 
     .row-posters {
-      display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
+      display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden;
       scroll-behavior: smooth; padding-bottom: 15px;
     }
     .row-posters::-webkit-scrollbar { height: 6px; }
-    .row-posters::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    .row-posters::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
 
     .card {
-      flex: 0 0 180px; height: 270px; background-color: #222;
-      border-radius: 4px; overflow: hidden; cursor: pointer; position: relative;
+      flex: 0 0 180px; height: 270px; background-color: var(--card-bg);
+      border-radius: 8px; overflow: hidden; cursor: pointer; position: relative;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid #1e293b;
     }
-    .card:hover { transform: scale(1.08); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
+    .card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 10px 25px rgba(0, 117, 255, 0.3); border-color: var(--accent-cyan); }
     .card img { width: 100%; height: 100%; object-fit: cover; }
     .card-title-overlay {
       position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px 10px 10px;
-      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      background: linear-gradient(to top, rgba(11,15,25,0.95), transparent);
       font-size: 13px; font-weight: 600; text-align: center;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
@@ -137,58 +143,59 @@
     /* Vista de Cuadrícula expandida ("Ver más") */
     .grid-view-container { display: none; padding: 0 4%; margin-top: 90px; }
     .grid-view-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-    .btn-volver { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-volver { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
     .grid-cards .card { width: 100%; height: 240px; }
 
     /* Modal del Reproductor */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto;
+      background: rgba(5, 8, 15, 0.95); z-index: 1000; overflow-y: auto; backdrop-filter: blur(5px);
     }
     .modal-content {
       position: relative; width: 90%; max-width: 900px; margin: 30px auto;
-      background: #181818; border-radius: 8px; overflow: hidden;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.9); border: 1px solid #333;
+      background: var(--card-bg); border-radius: 12px; overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8); border: 1px solid #1e293b;
     }
     .close-btn {
       position: absolute; top: 15px; right: 20px; color: #fff; font-size: 28px;
-      cursor: pointer; z-index: 1001; background: rgba(0,0,0,0.5);
+      cursor: pointer; z-index: 1001; background: rgba(30, 41, 59, 0.8);
       width: 36px; height: 36px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: center; transition: background 0.2s;
     }
+    .close-btn:hover { background: var(--primary-blue); }
 
     .server-selector {
-      display: flex; gap: 6px; padding: 12px; background: #1f1f1f;
-      justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #333;
+      display: flex; gap: 8px; padding: 12px; background: #0f172a;
+      justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #1e293b;
     }
     .server-btn {
-      background: #282828; color: #ccc; border: 1px solid #444;
-      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;
+      background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+      padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
     }
     .server-btn:hover, .server-btn.active {
-      background: var(--netflix-red); color: #fff; border-color: var(--netflix-red);
+      background: var(--primary-blue); color: #fff; border-color: var(--accent-cyan);
     }
 
     .quick-toolbar {
-      background: #222; padding: 10px 20px; display: flex;
-      justify-content: space-between; align-items: center; font-size: 12px; color: var(--gray-text); border-bottom: 1px solid #333;
+      background: #0b0f19; padding: 10px 20px; display: flex;
+      justify-content: space-between; align-items: center; font-size: 12px; color: var(--gray-text); border-bottom: 1px solid #1e293b;
       flex-wrap: wrap; gap: 10px;
     }
     .action-btn {
-      background: var(--netflix-red); color: #fff; text-decoration: none;
-      padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;
+      background: var(--primary-blue); color: #fff; text-decoration: none;
+      padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;
     }
-    .action-btn:hover { background-color: #f40612; }
+    .action-btn:hover { background-color: var(--accent-cyan); color: #000; }
 
     .iframe-wrapper { position: relative; width: 100%; height: 480px; background: #000; }
     iframe, video { width: 100%; height: 100%; border: none; display: block; }
 
-    .series-panel { padding: 20px; background: #141414; border-top: 1px solid #333; }
-    .season-select { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; outline: none; }
+    .series-panel { padding: 20px; background: #0b0f19; border-top: 1px solid #1e293b; }
+    .season-select { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; outline: none; }
     .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; margin-top: 15px; }
-    .ep-btn { background: #222; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 4px; cursor: pointer; text-align: center; font-size: 12px; }
-    .ep-btn:hover, .ep-btn.active { background: var(--netflix-red); color: #fff; border-color: var(--netflix-red); }
+    .ep-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 12px; }
+    .ep-btn:hover, .ep-btn.active { background: var(--primary-blue); color: #fff; border-color: var(--accent-cyan); }
 
     @media(max-width: 768px) {
       .hero-title { font-size: 28px; }
@@ -225,7 +232,7 @@
     </div>
 
     <div class="catalog-container" id="catalogContainer">
-      <div style="text-align: center; color: #777; padding: 40px;">Cargando carruseles...</div>
+      <div style="text-align: center; color: #64748b; padding: 40px;">Cargando carruseles...</div>
     </div>
   </div>
 
@@ -247,7 +254,7 @@
       <div id="serverContainer" class="server-selector"></div>
 
       <div class="quick-toolbar">
-        <span id="serverInfo">💡 Si el video no carga, prueba cambiando de servidor o abriendo la pestaña completa.</span>
+        <span id="serverInfo">💡 Si el video no carga, prueba cambiando de servidor.</span>
         <a id="externalLink" href="#" target="_blank" class="action-btn">📺 Abrir en Pestaña Directa</a>
       </div>
 
@@ -260,7 +267,7 @@
 
       <div id="seriesPanel" class="series-panel" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span id="seriesTitle" style="font-size: 16px; font-weight: bold; color: var(--netflix-red);">Episodios</span>
+          <span id="seriesTitle" style="font-size: 16px; font-weight: bold; color: var(--accent-cyan);">Episodios</span>
           <select id="seasonSelect" class="season-select" onchange="seleccionarTemporada(this.value)"></select>
         </div>
         <div id="episodesGrid" class="episodes-grid"></div>
@@ -465,22 +472,22 @@
 
       servidoresDisponibles = [];
       try {
-        // Consultar a SQLite Backend si existe el título
+        // Consultar la BD local
         const resBackend = await fetch(`/api/contenido/${item.id}`);
         const dataBackend = await resBackend.json();
 
         if (dataBackend.success && dataBackend.data) {
           servidoresDisponibles.push({
-            nombre: "Servidor Principal (HD/Latino)",
+            nombre: "Servidor VIP (Sin Publicidad)",
             isBackend: true,
             backendId: dataBackend.data.id
           });
         }
       } catch (e) {
-        console.log("No se encontró entrada en la BD local, usando servidores remotos.");
+        console.log("No se encontró entrada local, usando respaldos remotos.");
       }
 
-      // Añadir respaldos universales de TMDB
+      // Servidores de respaldo TMDB
       SERVIDORES_TMDB.forEach(srv => {
         servidoresDisponibles.push({ ...srv, isBackend: false });
       });
@@ -525,7 +532,7 @@
         hlsInstance = null;
       }
 
-      // REPRODUCCIÓN DESDE TU BACKEND (Streamwish, Uqload, Doodstream, etc.)
+      // REPRODUCCIÓN BACKEND VÍA PUPPETEER + PROXY
       if (srv && srv.isBackend) {
         iframe.style.display = 'none';
         videoPlayer.style.display = 'block';
@@ -537,7 +544,7 @@
           if (streamData.success) {
             const { streamUrl, type, headers } = streamData.data;
 
-            // Pasa por el proxy de tu servidor Node.js
+            // Ruta de transmisión mediante proxy de backend
             const proxyUrl = `/api/proxy-stream?url=${encodeURIComponent(streamUrl)}&referer=${encodeURIComponent(headers?.Referer || '')}`;
             linkExt.href = streamUrl;
 
@@ -546,19 +553,23 @@
                 hlsInstance = new Hls();
                 hlsInstance.loadSource(proxyUrl);
                 hlsInstance.attachMedia(videoPlayer);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => videoPlayer.play());
               } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
                 videoPlayer.src = proxyUrl;
+                videoPlayer.play();
               }
             } else {
               videoPlayer.src = proxyUrl;
+              videoPlayer.play();
             }
-            videoPlayer.play();
+          } else {
+            alert("Error: " + streamData.message);
           }
         } catch (err) {
-          alert("Error cargando el reproductor desde el servidor principal.");
+          alert("Error conectando con el servidor de video.");
         }
       } 
-      // REPRODUCCIÓN RESPALDO TMDB EMBEDS
+      // RESPALDO DE SERVIDORES EXTERNOS TMDB
       else if (srv) {
         videoPlayer.pause();
         videoPlayer.style.display = 'none';

@@ -2,7 +2,7 @@ const express = require('express');
 const Database = require('better-sqlite3');
 const cors = require('cors');
 const path = require('path');
-const { spawn } = require('child_process');
+const puppeteer = require('puppeteer');
 const axios = require('axios');
 
 const app = express();
@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // -------------------------------------------------------------------
-// INICIALIZAR BASE DE DATOS SQLITE (better-sqlite3)
+// 1. INICIALIZAR BASE DE DATOS SQLITE (better-sqlite3)
 // -------------------------------------------------------------------
 const dbPath = path.join(__dirname, 'plataforma.db');
 const db = new Database(dbPath);
@@ -38,7 +38,7 @@ db.exec(`
   )
 `);
 
-// Asegurar compatibilidad de columnas agregadas previamente
+// Garantizar columnas de temporada y episodio
 try {
   db.exec("ALTER TABLE contenido ADD COLUMN temporada INTEGER;");
   db.exec("ALTER TABLE contenido ADD COLUMN episodio INTEGER;");
@@ -51,51 +51,84 @@ console.log('[+] Base de datos SQLite inicializada correctamente.');
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// -------------------------------------------------------------------
-// CONFIGURACIÓN DE CABECERAS PREDETERMINADAS Y PROXY
-// -------------------------------------------------------------------
 const DEFAULT_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
   'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
 };
 
-// Función aux para invocar extractor.py pasándole una URL o título
-function resolverConPython(parametro) {
-  return new Promise((resolve, reject) => {
-    // Apunta a extractor.py en la carpeta raíz o la subcarpeta scraper
-    const scriptPath = path.join(__dirname, 'extractor.py'); 
-    const pythonProcess = spawn('python', [scriptPath, parametro]);
-
-    let stdoutData = '';
-    let stderrData = '';
-
-    pythonProcess.stdout.on('data', (data) => {
-      stdoutData += data.toString();
+// -------------------------------------------------------------------
+// 2. EXTRACTOR HEADLESS (PUPPETEER) - CAPTURA DE RED DIRECTA
+// -------------------------------------------------------------------
+async function extractStreamWithBrowser(targetUrl) {
+  let browser = null;
+  try {
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process'
+      ]
     });
 
-    pythonProcess.stderr.on('data', (data) => {
-      stderrData += data.toString();
-    });
+    const page = await browser.newPage();
+    await page.setUserAgent(DEFAULT_HEADERS['User-Agent']);
 
-    pythonProcess.on('close', (code) => {
-      if (code !== 0) {
-        return reject(new Error(stderrData || `Error con código ${code}`));
+    let streamUrlFound = null;
+    let streamType = 'hls';
+
+    // Interceptar peticiones para capturar el flujo de video limpio
+    page.on('request', request => {
+      const reqUrl = request.url();
+      if ((reqUrl.includes('.m3u8') || reqUrl.includes('.mp4')) && !streamUrlFound) {
+        // Ignorar previews, miniaturas y tracking
+        if (!reqUrl.includes('preview') && !reqUrl.includes('thumb') && !reqUrl.includes('analytics')) {
+          streamUrlFound = reqUrl;
+          streamType = reqUrl.includes('.m3u8') ? 'hls' : 'mp4';
+        }
       }
-      try {
-        const jsonResult = JSON.parse(stdoutData);
-        resolve(jsonResult);
-      } catch (err) {
-        reject(new Error('Respuesta inválida del extractor.py'));
-      }
     });
-  });
+
+    // Convertir URLs normales a formato de inserción/embed si aplica
+    let embedUrl = targetUrl;
+    if (targetUrl.includes('/f/')) embedUrl = targetUrl.replace('/f/', '/e/');
+    if (targetUrl.includes('/d/')) embedUrl = targetUrl.replace('/d/', '/e/');
+
+    await page.goto(embedUrl, { waitUntil: 'networkidle2', timeout: 15000 });
+
+    // Si la reproducción no inicia sola, forzar click en el reproductor
+    if (!streamUrlFound) {
+      await page.mouse.click(150, 150);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    await browser.close();
+
+    if (streamUrlFound) {
+      return {
+        streamUrl: streamUrlFound,
+        type: streamType,
+        headers: {
+          'Referer': embedUrl,
+          'User-Agent': DEFAULT_HEADERS['User-Agent']
+        }
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`[!] Error extrayendo enlace con Puppeteer: ${error.message}`);
+    if (browser) await browser.close();
+    return null;
+  }
 }
 
 // -------------------------------------------------------------------
-// RUTAS DE LA API (ENDPOINTS)
+// 3. RUTAS DE LA API
 // -------------------------------------------------------------------
 
-// 1. OBTENER TODO EL CATÁLOGO (O FILTRADO POR TIPO)
+// Obtener todo el catálogo o filtrar por tipo
 app.get('/api/contenido', (req, res) => {
   try {
     const { tipo } = req.query;
@@ -114,7 +147,7 @@ app.get('/api/contenido', (req, res) => {
   }
 });
 
-// 2. OBTENER UN SOLO ITEM POR ID
+// Obtener un ítem por ID
 app.get('/api/contenido/:id', (req, res) => {
   try {
     const item = db.prepare('SELECT * FROM contenido WHERE id = ?').get(req.params.id);
@@ -127,21 +160,21 @@ app.get('/api/contenido/:id', (req, res) => {
   }
 });
 
-// 3. RESOLVER SERVIDOR DINÁMICO EJECUTANDO EXTRACTOR.PY
+// Resolver flujo de video mediante Puppeteer
 app.get('/api/resolve-stream/:id', async (req, res) => {
   try {
     const item = db.prepare('SELECT * FROM contenido WHERE id = ?').get(req.params.id);
     if (!item) {
-      return res.status(404).json({ success: false, message: 'Contenido no encontrado en DB' });
+      return res.status(404).json({ success: false, message: 'Contenido no encontrado' });
     }
 
-    // Ejecuta el script de Python enviando la URL guardada en la base de datos
-    const resolved = await resolverConPython(item.stream_url);
+    console.log(`[*] Resolviendo stream para: ${item.titulo}`);
+    const resolved = await extractStreamWithBrowser(item.stream_url);
 
-    if (!resolved || !resolved.success) {
+    if (!resolved) {
       return res.status(502).json({
         success: false,
-        message: resolved?.message || 'No se pudo resolver el enlace de reproducción.'
+        message: 'No se pudo capturar la URL del stream desde el servidor.'
       });
     }
 
@@ -150,7 +183,7 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
       data: {
         id: item.id,
         titulo: item.titulo,
-        ...resolved.data
+        ...resolved
       }
     });
   } catch (error) {
@@ -158,7 +191,7 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
   }
 });
 
-// 4. PROXY DE VIDEO (REMITENTE Y REFERER)
+// Proxy de transmisión para omitir bloqueos por Referer/CORS
 app.get('/api/proxy-stream', async (req, res) => {
   const { url, referer } = req.query;
 
@@ -191,7 +224,7 @@ app.get('/api/proxy-stream', async (req, res) => {
   }
 });
 
-// 5. AGREGAR NUEVO CONTENIDO
+// Registrar nuevo contenido
 app.post('/api/contenido', (req, res) => {
   const {
     titulo,
@@ -246,23 +279,7 @@ app.post('/api/contenido', (req, res) => {
   }
 });
 
-// 6. SCRAPER EN TIEMPO REAL
-app.get('/api/scrape', async (req, res) => {
-  const { title } = req.query;
-
-  if (!title) {
-    return res.status(400).json({ success: false, error: 'Título requerido' });
-  }
-
-  try {
-    const jsonResult = await resolverConPython(title);
-    res.json(jsonResult);
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 7. ELIMINAR CONTENIDO
+// Eliminar contenido
 app.delete('/api/contenido/:id', (req, res) => {
   try {
     const stmt = db.prepare('DELETE FROM contenido WHERE id = ?');
