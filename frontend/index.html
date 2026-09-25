@@ -179,32 +179,37 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    // Servidores de Respaldo Potentes
+    // NUEVA LISTA EXPANDIDA DE SERVIDORES DE ALTA DISPONIBILIDAD
     const SERVIDORES_TMDB = [
       { 
-        nombre: "Servidor 1 (AutoEmbed - Opción Latina/Sub)", 
-        getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` 
+        nombre: "⚡ Servidor Alpha (VidLink - Alta Velocidad)", 
+        getMovie: (id) => `https://vidlink.pro/movie/${id}`, 
+        getTv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}` 
       },
       { 
-        nombre: "Servidor 2 (VidSrc.cc)", 
-        getMovie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}` 
+        nombre: "🌐 Servidor Beta (VidSrc.vip)", 
+        getMovie: (id) => `https://vidsrc.vip/embed/movie/${id}`, 
+        getTv: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}` 
       },
       { 
-        nombre: "Servidor 3 (VidSrc.to)", 
-        getMovie: (id) => `https://vidsrc.to/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}` 
+        nombre: "🚀 Servidor Gamma (VidCore CDN)", 
+        getMovie: (id) => `https://api.vidcore.org/embed/movie/${id}`, 
+        getTv: (id, s, e) => `https://api.vidcore.org/embed/series/${id}/${s}/${e}` 
       },
       { 
-        nombre: "Servidor 4 (SuperEmbed)", 
-        getMovie: (id) => `https://multembed.mov/?video_id=${id}&tmdb=1`, 
-        getTv: (id, s, e) => `https://multembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}` 
+        nombre: "🎬 Servidor Delta (2Embed CC)", 
+        getMovie: (id) => `https://www.2embed.cc/embed/${id}`, 
+        getTv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}` 
       },
       { 
-        nombre: "Servidor 5 (Embed.su)", 
-        getMovie: (id) => `https://embed.su/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` 
+        nombre: "🔥 Servidor Epsilon (AutoEmbed.co)", 
+        getMovie: (id) => `https://autoembed.co/movie/tmdb/${id}`, 
+        getTv: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` 
+      },
+      { 
+        nombre: "🍿 Servidor Zeta (Nginx Embed)", 
+        getMovie: (id) => `https://embed.smashystream.com/playere.php?tmdb=${id}`, 
+        getTv: (id, s, e) => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}` 
       }
     ];
 
@@ -284,13 +289,15 @@
       document.getElementById('playerModal').style.display = 'block';
 
       servidoresDisponibles = [];
+
+      // 1. Verificar si existe extracción propia en SQLite
       try {
         const resBackend = await fetch(`/api/contenido/${item.id}`);
         if (resBackend.ok) {
           const dataBackend = await resBackend.json();
           if (dataBackend.success && dataBackend.data) {
             servidoresDisponibles.push({
-              nombre: "⭐ Servidor VIP Directo (Extraído)",
+              nombre: "⭐ Servidor Directo (Extraído)",
               isBackend: true,
               backendId: dataBackend.data.id
             });
@@ -298,7 +305,9 @@
         }
       } catch (e) {}
 
+      // 2. Cargar lista completa de Servidores Internacionales
       SERVIDORES_TMDB.forEach(srv => servidoresDisponibles.push({ ...srv, isBackend: false }));
+
       renderizarBotonesServidores();
 
       if (modoActual === 'movie') {
@@ -365,10 +374,10 @@
               videoPlayer.play();
             }
           } else {
-            alert("El servidor VIP no pudo extraer la transmisión. Cambia a otro servidor de la lista.");
+            alert("Error extrayendo fuente VIP. Selecciona otro servidor.");
           }
         } catch (err) {
-          alert("Error de conexión al extraer la fuente.");
+          alert("Error de red conectando al servidor interno.");
         }
       } else if (srv) {
         videoPlayer.pause();
