@@ -6,19 +6,19 @@ const { spawn } = require('child_process');
 const axios = require('axios');
 
 const app = express();
-const PORT = 5011; // Puerto configurado para la plataforma
+const PORT = 5011;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
 // -------------------------------------------------------------------
-// INICIALIZAR BASE DE DATOS SQLITE
+// INICIALIZAR BASE DE DATOS SQLITE (better-sqlite3)
 // -------------------------------------------------------------------
 const dbPath = path.join(__dirname, 'plataforma.db');
 const db = new Database(dbPath);
 
-// Crear la tabla de contenidos si no existe (incluye temporada y episodio)
+// Crear la tabla de contenidos si no existe
 db.exec(`
   CREATE TABLE IF NOT EXISTS contenido (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,12 +38,12 @@ db.exec(`
   )
 `);
 
-// Intentar agregar columnas si la tabla ya existía previamente
+// Asegurar compatibilidad de columnas agregadas previamente
 try {
   db.exec("ALTER TABLE contenido ADD COLUMN temporada INTEGER;");
   db.exec("ALTER TABLE contenido ADD COLUMN episodio INTEGER;");
 } catch (e) {
-  // Las columnas ya existen en la base de datos
+  // Las columnas ya existen
 }
 
 console.log('[+] Base de datos SQLite inicializada correctamente.');
@@ -52,207 +52,50 @@ console.log('[+] Base de datos SQLite inicializada correctamente.');
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // -------------------------------------------------------------------
-// CONFIGURACIÓN Y EXTRACTORES DE SERVIDORES MULTIMEDIA
+// CONFIGURACIÓN DE CABECERAS PREDETERMINADAS Y PROXY
 // -------------------------------------------------------------------
 const DEFAULT_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
   'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
 };
 
-// 1. EXTRACTOR: Streamwish
-async function extractStreamwish(url) {
-  try {
-    const embedUrl = url.replace('/f/', '/e/');
-    const response = await axios.get(embedUrl, {
-      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
-      timeout: 8000
-    });
-    const match = response.data.match(/file\s*:\s*["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/);
-    if (!match) throw new Error('m3u8 no encontrado');
+// Función aux para invocar extractor.py pasándole una URL o título
+function resolverConPython(parametro) {
+  return new Promise((resolve, reject) => {
+    // Apunta a extractor.py en la carpeta raíz o la subcarpeta scraper
+    const scriptPath = path.join(__dirname, 'extractor.py'); 
+    const pythonProcess = spawn('python', [scriptPath, parametro]);
 
-    return {
-      server: 'Streamwish',
-      streamUrl: match[1],
-      type: 'hls',
-      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
-    };
-  } catch (e) {
-    console.warn(`[!] Streamwish falló: ${e.message}`);
-    return null;
-  }
-}
+    let stdoutData = '';
+    let stderrData = '';
 
-// 2. EXTRACTOR: Uqload
-async function extractUqload(url) {
-  try {
-    const embedUrl = url.replace('/f/', '/e/');
-    const response = await axios.get(embedUrl, {
-      headers: { ...DEFAULT_HEADERS, 'Referer': 'https://uqload.io/' },
-      timeout: 8000
-    });
-    const match = response.data.match(/sources\s*:\s*\[["'](https?:\/\/[^"']+\.mp4[^"']*)["']\]/);
-    if (!match) throw new Error('MP4 no encontrado');
-
-    return {
-      server: 'Uqload',
-      streamUrl: match[1],
-      type: 'mp4',
-      headers: { 'Referer': 'https://uqload.io/', 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
-    };
-  } catch (e) {
-    console.warn(`[!] Uqload falló: ${e.message}`);
-    return null;
-  }
-}
-
-// 3. EXTRACTOR: Doodstream
-async function extractDoodstream(url) {
-  try {
-    const embedUrl = url.replace('/d/', '/e/');
-    const response = await axios.get(embedUrl, {
-      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
-      timeout: 8000
-    });
-    
-    const passMatch = response.data.match(/\/pass_md5\/[a-zA-Z0-9\-_]+/);
-    if (!passMatch) throw new Error('Token pass_md5 no encontrado');
-
-    const passUrl = `https://dood.to${passMatch[0]}`;
-    const passResponse = await axios.get(passUrl, {
-      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
-      timeout: 8000
+    pythonProcess.stdout.on('data', (data) => {
+      stdoutData += data.toString();
     });
 
-    const randomChars = Math.random().toString(36).substring(2, 12);
-    const token = passMatch[0].split('/').pop();
-    const finalUrl = `${passResponse.data}${randomChars}?token=${token}&expiry=${Date.now()}`;
-
-    return {
-      server: 'Doodstream',
-      streamUrl: finalUrl,
-      type: 'mp4',
-      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
-    };
-  } catch (e) {
-    console.warn(`[!] Doodstream falló: ${e.message}`);
-    return null;
-  }
-}
-
-// 4. EXTRACTOR: Filemoon
-async function extractFilemoon(url) {
-  try {
-    const embedUrl = url.replace('/f/', '/e/');
-    const response = await axios.get(embedUrl, {
-      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
-      timeout: 8000
+    pythonProcess.stderr.on('data', (data) => {
+      stderrData += data.toString();
     });
-    const match = response.data.match(/file\s*:\s*["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/);
-    if (!match) throw new Error('m3u8 no encontrado');
 
-    return {
-      server: 'Filemoon',
-      streamUrl: match[1],
-      type: 'hls',
-      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
-    };
-  } catch (e) {
-    console.warn(`[!] Filemoon falló: ${e.message}`);
-    return null;
-  }
-}
-
-// 5. EXTRACTOR: Voe.sx
-async function extractVoe(url) {
-  try {
-    const response = await axios.get(url, {
-      headers: DEFAULT_HEADERS,
-      timeout: 8000
+    pythonProcess.on('close', (code) => {
+      if (code !== 0) {
+        return reject(new Error(stderrData || `Error con código ${code}`));
+      }
+      try {
+        const jsonResult = JSON.parse(stdoutData);
+        resolve(jsonResult);
+      } catch (err) {
+        reject(new Error('Respuesta inválida del extractor.py'));
+      }
     });
-    const match = response.data.match(/['"]hls['"]\s*:\s*['"]([^'"]+)['"]/)|| response.data.match(/window\.location\.href\s*=\s*['"]([^'"]+)['"]/);
-    if (!match) throw new Error('URL de video no encontrada');
-
-    return {
-      server: 'Voe',
-      streamUrl: match[1],
-      type: match[1].includes('.m3u8') ? 'hls' : 'mp4',
-      headers: { 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
-    };
-  } catch (e) {
-    console.warn(`[!] Voe falló: ${e.message}`);
-    return null;
-  }
-}
-
-// 6. EXTRACTOR: Mixdrop
-async function extractMixdrop(url) {
-  try {
-    const embedUrl = url.replace('/f/', '/e/');
-    const response = await axios.get(embedUrl, {
-      headers: { ...DEFAULT_HEADERS, 'Referer': 'https://mixdrop.ag/' },
-      timeout: 8000
-    });
-    const match = response.data.match(/MDCore\.(?:wurl|gurl)\s*=\s*["']([^"']+)["']/);
-    if (!match) throw new Error('MDCore no encontrado');
-
-    let videoUrl = match[1];
-    if (videoUrl.startsWith('//')) videoUrl = `https:${videoUrl}`;
-
-    return {
-      server: 'Mixdrop',
-      streamUrl: videoUrl,
-      type: 'mp4',
-      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
-    };
-  } catch (e) {
-    console.warn(`[!] Mixdrop falló: ${e.message}`);
-    return null;
-  }
-}
-
-// ORQUESTADOR CENTRAL DE RESOLUCIÓN DE SERVIDORES
-async function resolveStream(url) {
-  const urlLower = url ? url.toLowerCase() : '';
-
-  if (urlLower.includes('streamwish') || urlLower.includes('wish')) {
-    const result = await extractStreamwish(url);
-    if (result) return result;
-  }
-  if (urlLower.includes('uqload')) {
-    const result = await extractUqload(url);
-    if (result) return result;
-  }
-  if (urlLower.includes('dood')) {
-    const result = await extractDoodstream(url);
-    if (result) return result;
-  }
-  if (urlLower.includes('filemoon')) {
-    const result = await extractFilemoon(url);
-    if (result) return result;
-  }
-  if (urlLower.includes('voe')) {
-    const result = await extractVoe(url);
-    if (result) return result;
-  }
-  if (urlLower.includes('mixdrop')) {
-    const result = await extractMixdrop(url);
-    if (result) return result;
-  }
-
-  // Si es un enlace directo o iFrame Embed genérico
-  return {
-    server: 'Directo / Embed',
-    streamUrl: url,
-    type: url.includes('.m3u8') ? 'hls' : (url.includes('.mp4') ? 'mp4' : 'embed'),
-    headers: DEFAULT_HEADERS
-  };
+  });
 }
 
 // -------------------------------------------------------------------
 // RUTAS DE LA API (ENDPOINTS)
 // -------------------------------------------------------------------
 
-// 1. OBTENER CATALOGO
+// 1. OBTENER TODO EL CATÁLOGO (O FILTRADO POR TIPO)
 app.get('/api/contenido', (req, res) => {
   try {
     const { tipo } = req.query;
@@ -271,7 +114,7 @@ app.get('/api/contenido', (req, res) => {
   }
 });
 
-// 2. OBTENER UN SOLO ITEM
+// 2. OBTENER UN SOLO ITEM POR ID
 app.get('/api/contenido/:id', (req, res) => {
   try {
     const item = db.prepare('SELECT * FROM contenido WHERE id = ?').get(req.params.id);
@@ -284,20 +127,21 @@ app.get('/api/contenido/:id', (req, res) => {
   }
 });
 
-// 3. RESOLVER SERVIDOR DINÁMICO PARA EL REPRODUCTOR
+// 3. RESOLVER SERVIDOR DINÁMICO EJECUTANDO EXTRACTOR.PY
 app.get('/api/resolve-stream/:id', async (req, res) => {
   try {
     const item = db.prepare('SELECT * FROM contenido WHERE id = ?').get(req.params.id);
     if (!item) {
-      return res.status(404).json({ success: false, message: 'Contenido no encontrado' });
+      return res.status(404).json({ success: false, message: 'Contenido no encontrado en DB' });
     }
 
-    const resolved = await resolveStream(item.stream_url);
+    // Ejecuta el script de Python enviando la URL guardada en la base de datos
+    const resolved = await resolverConPython(item.stream_url);
 
-    if (!resolved) {
+    if (!resolved || !resolved.success) {
       return res.status(502).json({
         success: false,
-        message: 'No se pudo resolver ningún servidor funcional.'
+        message: resolved?.message || 'No se pudo resolver el enlace de reproducción.'
       });
     }
 
@@ -306,7 +150,7 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
       data: {
         id: item.id,
         titulo: item.titulo,
-        ...resolved
+        ...resolved.data
       }
     });
   } catch (error) {
@@ -314,7 +158,7 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
   }
 });
 
-// 4. PROXY PARA BYPASSEAR RESTRICCIONES DE CORS Y REFERER EN EL VIDEO
+// 4. PROXY DE VIDEO (REMITENTE Y REFERER)
 app.get('/api/proxy-stream', async (req, res) => {
   const { url, referer } = req.query;
 
@@ -347,7 +191,7 @@ app.get('/api/proxy-stream', async (req, res) => {
   }
 });
 
-// 5. REGISTRAR O ACTUALIZAR CONTENIDO
+// 5. AGREGAR NUEVO CONTENIDO
 app.post('/api/contenido', (req, res) => {
   const {
     titulo,
@@ -394,7 +238,7 @@ app.post('/api/contenido', (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Contenido registrado en la base de datos con éxito',
+      message: 'Contenido registrado con éxito',
       id: result.lastInsertRowid
     });
   } catch (error) {
@@ -402,48 +246,20 @@ app.post('/api/contenido', (req, res) => {
   }
 });
 
-// 6. EJECUTAR SCRAPER EN TIEMPO REAL
-app.get('/api/scrape', (req, res) => {
-  const { title, type, season, episode } = req.query;
+// 6. SCRAPER EN TIEMPO REAL
+app.get('/api/scrape', async (req, res) => {
+  const { title } = req.query;
 
   if (!title) {
     return res.status(400).json({ success: false, error: 'Título requerido' });
   }
 
-  const args = [
-    path.join(__dirname, '../scraper/extractor.py'),
-    title,
-    type || 'movie',
-    season || '1',
-    episode || '1'
-  ];
-
-  const pythonProcess = spawn('python3', args);
-
-  let resultData = '';
-  let errorData = '';
-
-  pythonProcess.stdout.on('data', (data) => {
-    resultData += data.toString();
-  });
-
-  pythonProcess.stderr.on('data', (data) => {
-    errorData += data.toString();
-  });
-
-  pythonProcess.on('close', (code) => {
-    if (code !== 0) {
-      console.error(`[!] Error en el proceso de Python: ${errorData}`);
-      return res.status(500).json({ success: false, error: 'Error ejecutando el extractor' });
-    }
-
-    try {
-      const jsonResult = JSON.parse(resultData);
-      res.json(jsonResult);
-    } catch (e) {
-      res.status(500).json({ success: false, error: 'Respuesta inválida del extractor' });
-    }
-  });
+  try {
+    const jsonResult = await resolverConPython(title);
+    res.json(jsonResult);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // 7. ELIMINAR CONTENIDO
@@ -457,7 +273,7 @@ app.delete('/api/contenido/:id', (req, res) => {
   }
 });
 
-// Iniciar servidor
+// Arrancar servidor
 app.listen(PORT, () => {
   console.log(`[+] API Backend corriendo en http://localhost:${PORT}`);
 });
