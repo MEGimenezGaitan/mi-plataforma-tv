@@ -7,7 +7,7 @@
   <style>
     :root {
       --bg-color: #141414;
-      --netflix-red: #09b2e5;
+      --netflix-red: #e50914;
       --text-color: #ffffff;
       --gray-text: #b3b3b3;
     }
@@ -75,7 +75,10 @@
     .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); }
     .hero-desc {
       font-size: 15px; color: var(--gray-text); line-height: 1.4; margin-bottom: 20px;
-      display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+      display: -webkit-box; 
+      -webkit-line-clamp: 3; 
+      line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
     }
     .hero-buttons { display: flex; gap: 12px; }
 
@@ -139,10 +142,10 @@
     /* Modal del Reproductor */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); z-index: 1000; overflow-y: auto;
+      background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto;
     }
     .modal-content {
-      position: relative; width: 90%; max-width: 900px; margin: 40px auto;
+      position: relative; width: 90%; max-width: 900px; margin: 30px auto;
       background: #181818; border-radius: 8px; overflow: hidden;
       box-shadow: 0 15px 40px rgba(0,0,0,0.9); border: 1px solid #333;
     }
@@ -159,7 +162,7 @@
     }
     .server-btn {
       background: #282828; color: #ccc; border: 1px solid #444;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;
     }
     .server-btn:hover, .server-btn.active {
       background: var(--netflix-red); color: #fff; border-color: var(--netflix-red);
@@ -167,14 +170,17 @@
 
     .quick-toolbar {
       background: #222; padding: 10px 20px; display: flex;
-      justify-content: space-between; align-items: center; font-size: 13px; color: var(--gray-text); border-bottom: 1px solid #333;
+      justify-content: space-between; align-items: center; font-size: 12px; color: var(--gray-text); border-bottom: 1px solid #333;
+      flex-wrap: wrap; gap: 10px;
     }
     .action-btn {
       background: var(--netflix-red); color: #fff; text-decoration: none;
-      padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 12px;
+      padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;
     }
+    .action-btn:hover { background-color: #f40612; }
 
-    iframe { width: 100%; height: 480px; border: none; background: #000; display: block; }
+    .iframe-wrapper { position: relative; width: 100%; height: 480px; background: #000; }
+    iframe { width: 100%; height: 100%; border: none; display: block; }
 
     .series-panel { padding: 20px; background: #141414; border-top: 1px solid #333; }
     .season-select { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; outline: none; }
@@ -185,7 +191,7 @@
     @media(max-width: 768px) {
       .hero-title { font-size: 28px; }
       .card { flex: 0 0 130px; height: 195px; }
-      iframe { height: 260px; }
+      .iframe-wrapper { height: 260px; }
     }
   </style>
 </head>
@@ -198,18 +204,17 @@
       <button class="nav-btn active" onclick="cambiarModo('movie')">Películas</button>
       <button class="nav-btn" onclick="cambiarModo('tv')">Series</button>
       <div class="search-box-nav">
-        <input type="text" id="searchInput" class="search-input-nav" placeholder="Títulos, personas..." onkeypress="handleKeyPress(event)">
+        <input type="text" id="searchInput" class="search-input-nav" placeholder="Buscar títulos..." onkeypress="handleKeyPress(event)">
       </div>
     </div>
   </div>
 
-  <!-- Vista Principal: Hero + Carruseles -->
+  <!-- Vista Principal -->
   <div id="mainHomeView">
-    <!-- Banner Hero Principal -->
     <div class="hero" id="heroBanner">
       <div class="hero-content">
-        <h1 class="hero-title" id="heroTitle">Cargando destacado...</h1>
-        <p class="hero-desc" id="heroDesc">Explora los contenidos más populares del catálogo actual.</p>
+        <h1 class="hero-title" id="heroTitle">Cargando...</h1>
+        <p class="hero-desc" id="heroDesc">Explora los contenidos más populares.</p>
         <div class="hero-buttons">
           <button class="btn-play" id="heroPlayBtn">▶ Reproducir</button>
           <button class="btn-info" id="heroInfoBtn">ℹ Más información</button>
@@ -217,7 +222,6 @@
       </div>
     </div>
 
-    <!-- Contenedor General de Filas / Carruseles -->
     <div class="catalog-container" id="catalogContainer">
       <div style="text-align: center; color: #777; padding: 40px;">Cargando carruseles...</div>
     </div>
@@ -237,15 +241,17 @@
     <div class="modal-content">
       <span class="close-btn" onclick="cerrarReproductor()">&times;</span>
       
-      <!-- Selector de Servidores actualizados (incluye proveedores específicos y embebidos latino) -->
+      <!-- Selector de Servidores basados en TMDB ID -->
       <div id="serverContainer" class="server-selector"></div>
 
       <div class="quick-toolbar">
-        <span id="serverInfo">Si un servidor falla, cambia a Streamwish, Doodstream, Uqload o MXL</span>
-        <a id="externalLink" href="#" target="_blank" class="action-btn">🔗 Pestaña Nueva</a>
+        <span id="serverInfo">💡 Si el video no carga por restricciones del navegador, abre el enlace en pantalla completa.</span>
+        <a id="externalLink" href="#" target="_blank" class="action-btn">📺 Abrir en Pantalla Completa / Pestaña</a>
       </div>
 
-      <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+      <div class="iframe-wrapper">
+        <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+      </div>
 
       <div id="seriesPanel" class="series-panel" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -260,14 +266,28 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    // Servidores integrados incluyendo alternativas de streaming masivo y reproductores especializados
+    /* Proveedores y agregadores de reproducción */
     const SERVIDORES = [
-      { nombre: "AutoEmbed", getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`, getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` },
-      { nombre: "Streamwish", getMovie: (id) => `https://streamwish.to/embed-${id}.html`, getTv: (id, s, e) => `https://streamwish.to/embed-${id}-${s}-${e}.html` },
-      { nombre: "Doodstream", getMovie: (id) => `https://dood.wf/e/${id}`, getTv: (id, s, e) => `https://dood.wf/e/${id}` },
-      { nombre: "Uqload", getMovie: (id) => `https://uqload.io/embed-${id}.html`, getTv: (id, s, e) => `https://uqload.io/embed-${id}.html` },
-      { nombre: "VidKing", getMovie: (id) => `https://vidking.net/embed/movie/${id}`, getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}` },
-      { nombre: "EmbedSu", getMovie: (id) => `https://embed.su/embed/movie/${id}`, getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` }
+      { 
+        nombre: "AutoEmbed (Latino/Sub)", 
+        getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`, 
+        getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` 
+      },
+      { 
+        nombre: "Embed.su", 
+        getMovie: (id) => `https://embed.su/embed/movie/${id}`, 
+        getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` 
+      },
+      { 
+        nombre: "VidKing", 
+        getMovie: (id) => `https://vidking.net/embed/movie/${id}`, 
+        getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}` 
+      },
+      { 
+        nombre: "MultiEmbed v2", 
+        getMovie: (id) => `https://multembed.mov/?video_id=${id}&tmdb=1`, 
+        getTv: (id, s, e) => `https://multembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}` 
+      }
     ];
 
     let modoActual = 'movie';
@@ -276,7 +296,6 @@
     let temporadaActiva = 1;
     let episodioActivo = 1;
 
-    // Efecto navbar al hacer scroll
     window.addEventListener('scroll', () => {
       const nav = document.getElementById('navbar');
       if (window.scrollY > 50) {
@@ -403,7 +422,6 @@
 
       try {
         const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
-        // Consultamos múltiples páginas para traer más elementos
         let allResults = [];
         for (let page = 1; page <= 3; page++) {
           const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${categoriaId}?api_key=${TMDB_API_KEY}&language=es-MX&page=${page}`);
@@ -553,7 +571,7 @@
       container.innerHTML = `<h2 class="row-title" style="margin-bottom:15px;">Resultados para: "${query}"</h2>`;
       
       const rowPosters = document.createElement('div');
-      rowPosters.className = 'grid-cards'; // Reutilizamos estilo grid para resultados de búsqueda
+      rowPosters.className = 'grid-cards';
 
       const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
       const res = await fetch(`https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&query=${encodeURIComponent(query)}`);
