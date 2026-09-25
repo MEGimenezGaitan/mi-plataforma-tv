@@ -14,7 +14,14 @@ const db = new sqlite3.Database('./database.db', (err) => {
 });
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// --- CAMBIO AQUÍ: Servir carpeta frontend subiendo un nivel ---
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// --- CAMBIO AQUÍ: Ruta para entregar index.html en el inicio ---
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 // 1. Obtener contenido por tmdb_id
 app.get('/api/contenido/:tmdbId', (req, res) => {
