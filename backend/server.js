@@ -3,6 +3,7 @@ const Database = require('better-sqlite3');
 const cors = require('cors');
 const path = require('path');
 const { spawn } = require('child_process');
+const axios = require('axios');
 
 const app = express();
 const PORT = 5011; // Puerto configurado para la plataforma
@@ -37,13 +38,11 @@ db.exec(`
   )
 `);
 
-// Intentar agregar columnas de temporada y episodio si la tabla ya existía de antes
+// Intentar agregar columnas si no existen
 try {
   db.exec("ALTER TABLE contenido ADD COLUMN temporada INTEGER;");
   db.exec("ALTER TABLE contenido ADD COLUMN episodio INTEGER;");
-} catch (e) {
-  // Las columnas ya existen en la base de datos
-}
+} catch (e) {}
 
 console.log('[+] Base de datos SQLite inicializada correctamente.');
 
@@ -51,10 +50,141 @@ console.log('[+] Base de datos SQLite inicializada correctamente.');
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // -------------------------------------------------------------------
+// MÓDULOS DE EXTRACCIÓN DINÁMICA DE SERVIDORES
+// -------------------------------------------------------------------
+const DEFAULT_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+};
+
+async function extractStreamwish(url) {
+  try {
+    const embedUrl = url.replace('/f/', '/e/');
+    const response = await axios.get(embedUrl, {
+      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
+      timeout: 8000
+    });
+    const match = response.data.match(/file\s*:\s*["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/);
+    if (!match) throw new Error('m3u8 no encontrado');
+
+    return {
+      server: 'Streamwish',
+      streamUrl: match[1],
+      type: 'hls',
+      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
+    };
+  } catch (e) {
+    console.warn(`[!] Streamwish falló: ${e.message}`);
+    return null;
+  }
+}
+
+async function extractUqload(url) {
+  try {
+    const embedUrl = url.replace('/f/', '/e/');
+    const response = await axios.get(embedUrl, {
+      headers: { ...DEFAULT_HEADERS, 'Referer': 'https://uqload.io/' },
+      timeout: 8000
+    });
+    const match = response.data.match(/sources\s*:\s*\[["'](https?:\/\/[^"']+\.mp4[^"']*)["']\]/);
+    if (!match) throw new Error('MP4 no encontrado');
+
+    return {
+      server: 'Uqload',
+      streamUrl: match[1],
+      type: 'mp4',
+      headers: { 'Referer': 'https://uqload.io/', 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
+    };
+  } catch (e) {
+    console.warn(`[!] Uqload falló: ${e.message}`);
+    return null;
+  }
+}
+
+async function extractDoodstream(url) {
+  try {
+    const embedUrl = url.replace('/d/', '/e/');
+    const response = await axios.get(embedUrl, {
+      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
+      timeout: 8000
+    });
+    const passMatch = response.data.match(/\/pass_md5\/[a-zA-Z0-9\-_]+/);
+    if (!passMatch) throw new Error('Token pass_md5 no encontrado');
+
+    const passUrl = `https://dood.to${passMatch[0]}`;
+    const passResponse = await axios.get(passUrl, {
+      headers: { ...DEFAULT_HEADERS, 'Referer': embedUrl },
+      timeout: 8000
+    });
+
+    const randomChars = Math.random().toString(36).substring(2, 12);
+    const token = passMatch[0].split('/').pop();
+    const finalUrl = `${passResponse.data}${randomChars}?token=${token}&expiry=${Date.now()}`;
+
+    return {
+      server: 'Doodstream',
+      streamUrl: finalUrl,
+      type: 'mp4',
+      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
+    };
+  } catch (e) {
+    console.warn(`[!] Doodstream falló: ${e.message}`);
+    return null;
+  }
+}
+
+async function extractMixdrop(url) {
+  try {
+    const embedUrl = url.replace('/f/', '/e/');
+    const response = await axios.get(embedUrl, {
+      headers: { ...DEFAULT_HEADERS, 'Referer': 'https://mixdrop.ag/' },
+      timeout: 8000
+    });
+    const match = response.data.match(/MDCore\.(?:wurl|gurl)\s*=\s*["']([^"']+)["']/);
+    if (!match) throw new Error('MDCore.wurl no encontrado');
+
+    let videoUrl = match[1];
+    if (videoUrl.startsWith('//')) videoUrl = `https:${videoUrl}`;
+
+    return {
+      server: 'Mixdrop',
+      streamUrl: videoUrl,
+      type: 'mp4',
+      headers: { 'Referer': embedUrl, 'User-Agent': DEFAULT_HEADERS['User-Agent'] }
+    };
+  } catch (e) {
+    console.warn(`[!] Mixdrop falló: ${e.message}`);
+    return null;
+  }
+}
+
+// Función orquestadora
+async function resolveStream(url) {
+  const urlLower = url.toLowerCase();
+
+  if (urlLower.includes('streamwish') || urlLower.includes('wish')) {
+    return await extractStreamwish(url);
+  } else if (urlLower.includes('uqload')) {
+    return await extractUqload(url);
+  } else if (urlLower.includes('dood')) {
+    return await extractDoodstream(url);
+  } else if (urlLower.includes('mixdrop')) {
+    return await extractMixdrop(url);
+  }
+
+  // Si ya es un stream directo (.m3u8 o .mp4) se entrega directamente
+  return {
+    server: 'Directo',
+    streamUrl: url,
+    type: url.includes('.m3u8') ? 'hls' : 'mp4',
+    headers: DEFAULT_HEADERS
+  };
+}
+
+// -------------------------------------------------------------------
 // RUTAS DE LA API (ENDPOINTS)
 // -------------------------------------------------------------------
 
-// 1. OBTENER TODO EL CATÁLOGO (O FILTRAR POR TIPO: 'movie' O 'tv')
+// 1. OBTENER TODO EL CATÁLOGO
 app.get('/api/contenido', (req, res) => {
   try {
     const { tipo } = req.query;
@@ -86,7 +216,38 @@ app.get('/api/contenido/:id', (req, res) => {
   }
 });
 
-// 3. RECIBIR Y GUARDAR DATOS DEL SCRAPER (POST)
+// 3. NUEVA RUTA: RESOLVER ENLACE DIRECTO PARA EL REPRODUCTOR
+app.get('/api/resolve-stream/:id', async (req, res) => {
+  try {
+    const item = db.prepare('SELECT * FROM contenido WHERE id = ?').get(req.params.id);
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Contenido no encontrado' });
+    }
+
+    // Intentar resolver la URL usando el extractor adecuado
+    const resolved = await resolveStream(item.stream_url);
+
+    if (!resolved) {
+      return res.status(502).json({
+        success: false,
+        message: 'No se pudo obtener el stream funcional desde el servidor de origen.'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: item.id,
+        titulo: item.titulo,
+        ...resolved
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4. RECIBIR Y GUARDAR DATOS DEL SCRAPER (POST)
 app.post('/api/contenido', (req, res) => {
   const {
     titulo,
@@ -141,7 +302,7 @@ app.post('/api/contenido', (req, res) => {
   }
 });
 
-// 4. SCRAPER EN TIEMPO REAL (Admite tipo, temporada y episodio)
+// 5. SCRAPER EN TIEMPO REAL
 app.get('/api/scrape', (req, res) => {
   const { title, type, season, episode } = req.query;
 
@@ -149,7 +310,6 @@ app.get('/api/scrape', (req, res) => {
     return res.status(400).json({ success: false, error: 'Título requerido' });
   }
 
-  // Argumentos enviando título, tipo (movie/serie), temporada y episodio a Python
   const args = [
     path.join(__dirname, '../scraper/extractor.py'),
     title,
@@ -186,7 +346,7 @@ app.get('/api/scrape', (req, res) => {
   });
 });
 
-// 5. ELIMINAR UN CONTENIDO
+// 6. ELIMINAR UN CONTENIDO
 app.delete('/api/contenido/:id', (req, res) => {
   try {
     const stmt = db.prepare('DELETE FROM contenido WHERE id = ?');
