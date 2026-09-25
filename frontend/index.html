@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Streaming Net - Películas y Series (Latino)</title>
-  <!-- Reproductor HLS para flujos .m3u8 -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     :root {
@@ -25,17 +24,12 @@
       overflow-x: hidden;
     }
 
-    /* Barra de Navegación */
     .navbar {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 70px;
-      padding: 0 4%;
-      display: flex; align-items: center; justify-content: space-between;
+      position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+      padding: 0 4%; display: flex; align-items: center; justify-content: space-between;
       background: linear-gradient(to bottom, rgba(11, 15, 25, 0.9) 0%, rgba(11, 15, 25, 0) 100%);
-      z-index: 100;
-      transition: background-color 0.3s;
+      z-index: 100; transition: background-color 0.3s;
     }
-
     .navbar.scrolled { background-color: var(--bg-color); border-bottom: 1px solid #1e293b; }
 
     .logo {
@@ -45,157 +39,50 @@
     }
 
     .nav-links { display: flex; gap: 20px; align-items: center; }
-
-    .nav-btn {
-      background: transparent; color: var(--text-color); border: none;
-      cursor: pointer; font-size: 14px; font-weight: 500; transition: color 0.2s;
-    }
-
+    .nav-btn { background: transparent; color: var(--text-color); border: none; cursor: pointer; font-size: 14px; font-weight: 500; }
     .nav-btn.active, .nav-btn:hover { color: var(--accent-cyan); font-weight: bold; }
 
-    .search-box-nav {
-      display: flex; background: rgba(19, 27, 46, 0.8);
-      border: 1px solid #1e293b; border-radius: 6px; padding: 5px 12px; align-items: center;
-    }
+    .search-box-nav { display: flex; background: rgba(19, 27, 46, 0.8); border: 1px solid #1e293b; border-radius: 6px; padding: 5px 12px; }
+    .search-input-nav { background: transparent; border: none; color: #fff; outline: none; font-size: 13px; width: 180px; }
 
-    .search-input-nav {
-      background: transparent; border: none; color: #fff; outline: none; font-size: 13px; width: 180px;
-    }
-
-    /* Banner Hero Destacado */
-    .hero {
-      position: relative; height: 75vh; width: 100%;
-      background-size: cover; background-position: center top;
-      display: flex; align-items: center; padding: 0 4%; margin-bottom: 30px;
-    }
-
-    .hero::after {
-      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(77deg, rgba(11,15,25,0.95) 0%, rgba(11,15,25,0.2) 50%),
-                  linear-gradient(to top, var(--bg-color) 0%, rgba(11,15,25,0) 60%);
-      z-index: 1;
-    }
-
+    .hero { position: relative; height: 75vh; width: 100%; background-size: cover; background-position: center top; display: flex; align-items: center; padding: 0 4%; margin-bottom: 30px; }
+    .hero::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(77deg, rgba(11,15,25,0.95) 0%, rgba(11,15,25,0.2) 50%), linear-gradient(to top, var(--bg-color) 0%, rgba(11,15,25,0) 60%); z-index: 1; }
     .hero-content { position: relative; z-index: 2; max-width: 600px; }
-    .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-    .hero-desc {
-      font-size: 15px; color: var(--gray-text); line-height: 1.4; margin-bottom: 20px;
-      display: -webkit-box; 
-      -webkit-line-clamp: 3; 
-      line-clamp: 3;
-      -webkit-box-orient: vertical; overflow: hidden;
-    }
+    .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 15px; }
+    .hero-desc { font-size: 15px; color: var(--gray-text); line-height: 1.4; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .hero-buttons { display: flex; gap: 12px; }
 
-    .btn-play {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--primary-blue));
-      color: #fff; border: none; padding: 10px 24px;
-      border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; gap: 8px; transition: opacity 0.2s, transform 0.2s;
-      box-shadow: 0 4px 12px rgba(0, 117, 255, 0.4);
-    }
-    .btn-play:hover { opacity: 0.9; transform: translateY(-2px); }
+    .btn-play { background: linear-gradient(135deg, var(--accent-cyan), var(--primary-blue)); color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 117, 255, 0.4); }
+    .btn-info { background-color: rgba(30, 41, 59, 0.8); color: #fff; border: 1px solid #334155; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-    .btn-info {
-      background-color: rgba(30, 41, 59, 0.8); color: #fff; border: 1px solid #334155;
-      padding: 10px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;
-      cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;
-    }
-    .btn-info:hover { background-color: rgba(51, 65, 85, 0.8); }
-
-    /* Contenedor de Carruseles */
     .catalog-container { padding: 0 4%; margin-bottom: 50px; }
     .row-section { margin-bottom: 35px; }
-
-    .row-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
-    }
+    .row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .row-title { font-size: 18px; font-weight: 700; color: #f1f5f9; border-left: 3px solid var(--accent-cyan); padding-left: 10px; }
-    
-    .btn-ver-mas {
-      background: transparent; border: none; color: var(--gray-text);
-      font-size: 13px; font-weight: bold; cursor: pointer; transition: color 0.2s;
-    }
-    .btn-ver-mas:hover { color: var(--accent-cyan); }
+    .btn-ver-mas { background: transparent; border: none; color: var(--gray-text); font-size: 13px; font-weight: bold; cursor: pointer; }
 
-    .row-posters {
-      display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden;
-      scroll-behavior: smooth; padding-bottom: 15px;
-    }
+    .row-posters { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; }
     .row-posters::-webkit-scrollbar { height: 6px; }
     .row-posters::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
 
-    .card {
-      flex: 0 0 180px; height: 270px; background-color: var(--card-bg);
-      border-radius: 8px; overflow: hidden; cursor: pointer; position: relative;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      border: 1px solid #1e293b;
-    }
-    .card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 10px 25px rgba(0, 117, 255, 0.3); border-color: var(--accent-cyan); }
+    .card { flex: 0 0 180px; height: 270px; background-color: var(--card-bg); border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; border: 1px solid #1e293b; transition: transform 0.3s; }
+    .card:hover { transform: scale(1.05); border-color: var(--accent-cyan); }
     .card img { width: 100%; height: 100%; object-fit: cover; }
-    .card-title-overlay {
-      position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px 10px 10px;
-      background: linear-gradient(to top, rgba(11,15,25,0.95), transparent);
-      font-size: 13px; font-weight: 600; text-align: center;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+    .card-title-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px 10px 10px; background: linear-gradient(to top, rgba(11,15,25,0.95), transparent); font-size: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Vista de Cuadrícula expandida ("Ver más") */
-    .grid-view-container { display: none; padding: 0 4%; margin-top: 90px; }
-    .grid-view-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-    .btn-volver { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-    .grid-cards .card { width: 100%; height: 240px; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 15, 0.95); z-index: 1000; overflow-y: auto; backdrop-filter: blur(5px); }
+    .modal-content { position: relative; width: 90%; max-width: 900px; margin: 30px auto; background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid #1e293b; }
+    .close-btn { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 28px; cursor: pointer; z-index: 1001; background: rgba(30, 41, 59, 0.8); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-    /* Modal del Reproductor */
-    .modal {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(5, 8, 15, 0.95); z-index: 1000; overflow-y: auto; backdrop-filter: blur(5px);
-    }
-    .modal-content {
-      position: relative; width: 90%; max-width: 900px; margin: 30px auto;
-      background: var(--card-bg); border-radius: 12px; overflow: hidden;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8); border: 1px solid #1e293b;
-    }
-    .close-btn {
-      position: absolute; top: 15px; right: 20px; color: #fff; font-size: 28px;
-      cursor: pointer; z-index: 1001; background: rgba(30, 41, 59, 0.8);
-      width: 36px; height: 36px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; transition: background 0.2s;
-    }
-    .close-btn:hover { background: var(--primary-blue); }
+    .server-selector { display: flex; gap: 8px; padding: 12px; background: #0f172a; justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #1e293b; }
+    .server-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .server-btn.active { background: var(--primary-blue); color: #fff; border-color: var(--accent-cyan); }
 
-    .server-selector {
-      display: flex; gap: 8px; padding: 12px; background: #0f172a;
-      justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #1e293b;
-    }
-    .server-btn {
-      background: #1e293b; color: #94a3b8; border: 1px solid #334155;
-      padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
-    }
-    .server-btn:hover, .server-btn.active {
-      background: var(--primary-blue); color: #fff; border-color: var(--accent-cyan);
-    }
-
-    .quick-toolbar {
-      background: #0b0f19; padding: 10px 20px; display: flex;
-      justify-content: space-between; align-items: center; font-size: 12px; color: var(--gray-text); border-bottom: 1px solid #1e293b;
-      flex-wrap: wrap; gap: 10px;
-    }
-    .action-btn {
-      background: var(--primary-blue); color: #fff; text-decoration: none;
-      padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;
-    }
-    .action-btn:hover { background-color: var(--accent-cyan); color: #000; }
+    .quick-toolbar { background: #0b0f19; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--gray-text); border-bottom: 1px solid #1e293b; }
+    .action-btn { background: var(--primary-blue); color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 12px; }
 
     .iframe-wrapper { position: relative; width: 100%; height: 480px; background: #000; }
     iframe, video { width: 100%; height: 100%; border: none; display: block; }
-
-    .series-panel { padding: 20px; background: #0b0f19; border-top: 1px solid #1e293b; }
-    .season-select { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; outline: none; }
-    .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; margin-top: 15px; }
-    .ep-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 12px; }
-    .ep-btn:hover, .ep-btn.active { background: var(--primary-blue); color: #fff; border-color: var(--accent-cyan); }
 
     @media(max-width: 768px) {
       .hero-title { font-size: 28px; }
@@ -206,71 +93,45 @@
 </head>
 <body>
 
-  <!-- Barra de Navegación -->
   <div class="navbar" id="navbar">
-    <div class="logo" onclick="volverInicio()">StreamingNet</div>
+    <div class="logo" onclick="location.reload()">StreamingNet</div>
     <div class="nav-links">
       <button class="nav-btn active" onclick="cambiarModo('movie')">Películas</button>
       <button class="nav-btn" onclick="cambiarModo('tv')">Series</button>
       <div class="search-box-nav">
-        <input type="text" id="searchInput" class="search-input-nav" placeholder="Buscar títulos..." onkeypress="handleKeyPress(event)">
+        <input type="text" id="searchInput" class="search-input-nav" placeholder="Buscar..." onkeypress="handleKeyPress(event)">
       </div>
     </div>
   </div>
 
-  <!-- Vista Principal -->
   <div id="mainHomeView">
     <div class="hero" id="heroBanner">
       <div class="hero-content">
         <h1 class="hero-title" id="heroTitle">Cargando...</h1>
-        <p class="hero-desc" id="heroDesc">Explora los contenidos más populares.</p>
+        <p class="hero-desc" id="heroDesc">Selecciona un título para comenzar.</p>
         <div class="hero-buttons">
           <button class="btn-play" id="heroPlayBtn">▶ Reproducir</button>
-          <button class="btn-info" id="heroInfoBtn">ℹ Más información</button>
+          <button class="btn-info" id="heroInfoBtn">ℹ Información</button>
         </div>
       </div>
     </div>
 
-    <div class="catalog-container" id="catalogContainer">
-      <div style="text-align: center; color: #64748b; padding: 40px;">Cargando carruseles...</div>
-    </div>
+    <div class="catalog-container" id="catalogContainer"></div>
   </div>
 
-  <!-- Vista Ampliada ("Ver más") -->
-  <div id="gridView" class="grid-view-container">
-    <div class="grid-view-header">
-      <button class="btn-volver" onclick="volverInicio()">← Volver</button>
-      <h2 id="gridCategoryTitle" style="font-size: 22px;">Categoría</h2>
-    </div>
-    <div class="grid-cards" id="gridCardsContainer"></div>
-  </div>
-
-  <!-- Modal del Reproductor -->
   <div id="playerModal" class="modal">
     <div class="modal-content">
       <span class="close-btn" onclick="cerrarReproductor()">&times;</span>
-      
-      <!-- Selector de Servidores -->
       <div id="serverContainer" class="server-selector"></div>
 
       <div class="quick-toolbar">
-        <span id="serverInfo">💡 Si el video no carga, prueba cambiando de servidor.</span>
-        <a id="externalLink" href="#" target="_blank" class="action-btn">📺 Abrir en Pestaña Directa</a>
+        <span>💡 Selecciona un servidor alternativo si el principal no carga.</span>
+        <a id="externalLink" href="#" target="_blank" class="action-btn">📺 Abrir Directo</a>
       </div>
 
       <div class="iframe-wrapper">
-        <!-- Reproductor HTML5 / HLS Nativo para Servidores Backend -->
         <video id="videoPlayer" controls style="display:none;"></video>
-        <!-- Reproductor Iframe para Embebedores TMDB -->
         <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
-      </div>
-
-      <div id="seriesPanel" class="series-panel" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span id="seriesTitle" style="font-size: 16px; font-weight: bold; color: var(--accent-cyan);">Episodios</span>
-          <select id="seasonSelect" class="season-select" onchange="seleccionarTemporada(this.value)"></select>
-        </div>
-        <div id="episodesGrid" class="episodes-grid"></div>
       </div>
     </div>
   </div>
@@ -278,52 +139,17 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    /* Proveedores respaldos basados en TMDB */
     const SERVIDORES_TMDB = [
-      { 
-        nombre: "AutoEmbed (Latino/Sub)", 
-        getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` 
-      },
-      { 
-        nombre: "Embed.su", 
-        getMovie: (id) => `https://embed.su/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` 
-      },
-      { 
-        nombre: "VidKing", 
-        getMovie: (id) => `https://vidking.net/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}` 
-      },
-      { 
-        nombre: "MultiEmbed v2", 
-        getMovie: (id) => `https://multembed.mov/?video_id=${id}&tmdb=1`, 
-        getTv: (id, s, e) => `https://multembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}` 
-      }
+      { nombre: "AutoEmbed (Latino)", getMovie: id => `https://player.autoembed.cc/embed/movie/${id}`, getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` },
+      { nombre: "Embed.su", getMovie: id => `https://embed.su/embed/movie/${id}`, getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` },
+      { nombre: "VidKing", getMovie: id => `https://vidking.net/embed/movie/${id}`, getTv: (id, s, e) => `https://vidking.net/embed/tv/${id}/${s}/${e}` }
     ];
 
     let modoActual = 'movie';
     let itemActivo = null;
     let servidoresDisponibles = [];
     let servidorActivoIdx = 0;
-    let temporadaActiva = 1;
-    let episodioActivo = 1;
     let hlsInstance = null;
-
-    window.addEventListener('scroll', () => {
-      const nav = document.getElementById('navbar');
-      if (window.scrollY > 50) {
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
-    });
-
-    function volverInicio() {
-      document.getElementById('gridView').style.display = 'none';
-      document.getElementById('mainHomeView').style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
 
     async function inicializarApp() {
       await cargarBannerHero();
@@ -337,171 +163,71 @@
         const data = await res.json();
         if (data.results && data.results.length > 0) {
           const destacado = data.results[0];
-          const backdrop = `https://image.tmdb.org/t/p/original${destacado.backdrop_path}`;
-          
-          document.getElementById('heroBanner').style.backgroundImage = `url(${backdrop})`;
+          document.getElementById('heroBanner').style.backgroundImage = `url(https://image.tmdb.org/t/p/original${destacado.backdrop_path})`;
           document.getElementById('heroTitle').innerText = destacado.title || destacado.name;
-          document.getElementById('heroDesc').innerText = destacado.overview || "Sin descripción disponible.";
-          
+          document.getElementById('heroDesc').innerText = destacado.overview || "Sin descripción.";
           document.getElementById('heroPlayBtn').onclick = () => abrirReproductor(destacado);
           document.getElementById('heroInfoBtn').onclick = () => abrirReproductor(destacado);
         }
-      } catch (err) {
-        console.error("Error al cargar banner", err);
-      }
+      } catch (e) { console.error(e); }
     }
 
     async function cargarCarruselesCategorias() {
       const container = document.getElementById('catalogContainer');
       container.innerHTML = '';
-
-      const categorias = modoActual === 'movie' ? [
-        { id: 'popular', nombre: 'Tendencias Actuales' },
-        { id: 'top_rated', nombre: 'Mejor Valoradas' },
-        { id: 'upcoming', nombre: 'Próximos Estrenos' }
-      ] : [
-        { id: 'popular', nombre: 'Series Populares' },
-        { id: 'top_rated', nombre: 'Críticamente Aclamadas' },
-        { id: 'on_the_air', nombre: 'En Emisión' }
-      ];
+      const categorias = [{ id: 'popular', nombre: 'Tendencias' }, { id: 'top_rated', nombre: 'Mejor Valoradas' }];
 
       for (const cat of categorias) {
         const rowSection = document.createElement('div');
         rowSection.className = 'row-section';
-
-        const rowHeader = document.createElement('div');
-        rowHeader.className = 'row-header';
-
-        const rowTitle = document.createElement('h2');
-        rowTitle.className = 'row-title';
-        rowTitle.innerText = cat.nombre;
-
-        const btnVerMas = document.createElement('button');
-        btnVerMas.className = 'btn-ver-mas';
-        btnVerMas.innerText = 'Ver más >';
-        btnVerMas.onclick = () => abrirVistaVerMas(cat.id, cat.nombre);
-
-        rowHeader.appendChild(rowTitle);
-        rowHeader.appendChild(btnVerMas);
-        rowSection.appendChild(rowHeader);
-
+        rowSection.innerHTML = `<div class="row-header"><h2 class="row-title">${cat.nombre}</h2></div>`;
         const rowPosters = document.createElement('div');
         rowPosters.className = 'row-posters';
 
-        try {
-          const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
-          const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${cat.id}?api_key=${TMDB_API_KEY}&language=es-MX`);
-          const data = await res.json();
+        const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
+        const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${cat.id}?api_key=${TMDB_API_KEY}&language=es-MX`);
+        const data = await res.json();
 
-          if (data.results) {
-            data.results.forEach(item => {
-              const card = crearTarjetaItem(item);
-              rowPosters.appendChild(card);
-            });
-          }
-        } catch (e) {
-          console.error(e);
+        if (data.results) {
+          data.results.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => abrirReproductor(item);
+            card.innerHTML = `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt=""><div class="card-title-overlay">${item.title || item.name}</div>`;
+            rowPosters.appendChild(card);
+          });
         }
-
         rowSection.appendChild(rowPosters);
         container.appendChild(rowSection);
       }
     }
 
-    function crearTarjetaItem(item) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.onclick = () => abrirReproductor(item);
-
-      const titulo = item.title || item.name;
-      const poster = item.poster_path 
-        ? `https://image.tmdb.org/t/p/w500${item.poster_path}` 
-        : 'https://via.placeholder.com/500x750?text=Sin+Imagen';
-
-      card.innerHTML = `
-        <img src="${poster}" alt="${titulo}" loading="lazy">
-        <div class="card-title-overlay">${titulo}</div>
-      `;
-      return card;
-    }
-
-    async function abrirVistaVerMas(categoriaId, nombreCategoria) {
-      document.getElementById('mainHomeView').style.display = 'none';
-      const gridView = document.getElementById('gridView');
-      gridView.style.display = 'block';
-
-      document.getElementById('gridCategoryTitle').innerText = nombreCategoria;
-      const gridContainer = document.getElementById('gridCardsContainer');
-      gridContainer.innerHTML = '<div style="color: #888; grid-column: span 4;">Cargando catálogo completo...</div>';
-
-      try {
-        const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
-        let allResults = [];
-        for (let page = 1; page <= 3; page++) {
-          const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${categoriaId}?api_key=${TMDB_API_KEY}&language=es-MX&page=${page}`);
-          const data = await res.json();
-          if (data.results) allResults = allResults.concat(data.results);
-        }
-
-        gridContainer.innerHTML = '';
-        allResults.forEach(item => {
-          const card = crearTarjetaItem(item);
-          gridContainer.appendChild(card);
-        });
-      } catch (err) {
-        gridContainer.innerHTML = '<div style="color: red;">Error al cargar los títulos.</div>';
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cambiarModo(nuevoModo) {
-      if (modoActual === nuevoModo) return;
-      modoActual = nuevoModo;
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.toLowerCase().includes(nuevoModo === 'movie' ? 'películas' : 'series')));
-      volverInicio();
-      inicializarApp();
-    }
-
     async function abrirReproductor(item) {
       itemActivo = item;
       servidorActivoIdx = 0;
-      temporadaActiva = 1;
-      episodioActivo = 1;
-
       document.getElementById('playerModal').style.display = 'block';
-
       servidoresDisponibles = [];
-      try {
-        // Consultar la BD local
-        const resBackend = await fetch(`/api/contenido/${item.id}`);
-        const dataBackend = await resBackend.json();
 
-        if (dataBackend.success && dataBackend.data) {
-          servidoresDisponibles.push({
-            nombre: "Servidor VIP (Sin Publicidad)",
-            isBackend: true,
-            backendId: dataBackend.data.id
-          });
+      try {
+        const resBackend = await fetch(`/api/contenido/${item.id}`);
+        // Validar que la respuesta de Express sea 200 OK
+        if (resBackend.ok) {
+          const dataBackend = await resBackend.json();
+          if (dataBackend.success && dataBackend.data) {
+            servidoresDisponibles.push({
+              nombre: "Servidor VIP",
+              isBackend: true,
+              backendId: dataBackend.data.id
+            });
+          }
         }
       } catch (e) {
-        console.log("No se encontró entrada local, usando respaldos remotos.");
+        console.log("Servidor local no disponible para este ID.");
       }
 
-      // Servidores de respaldo TMDB
-      SERVIDORES_TMDB.forEach(srv => {
-        servidoresDisponibles.push({ ...srv, isBackend: false });
-      });
-
+      SERVIDORES_TMDB.forEach(srv => servidoresDisponibles.push({ ...srv, isBackend: false }));
       renderizarBotonesServidores();
-
-      if (modoActual === 'movie') {
-        document.getElementById('seriesPanel').style.display = 'none';
-        actualizarIframe();
-      } else {
-        document.getElementById('seriesPanel').style.display = 'block';
-        document.getElementById('seriesTitle').innerText = item.name || "Serie";
-        await cargarEstructuraSerie(item.id);
-      }
+      actualizarIframe();
     }
 
     function renderizarBotonesServidores() {
@@ -527,12 +253,8 @@
       const linkExt = document.getElementById('externalLink');
       const srv = servidoresDisponibles[servidorActivoIdx];
 
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-      }
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
 
-      // REPRODUCCIÓN BACKEND VÍA PUPPETEER + PROXY
       if (srv && srv.isBackend) {
         iframe.style.display = 'none';
         videoPlayer.style.display = 'block';
@@ -543,98 +265,30 @@
 
           if (streamData.success) {
             const { streamUrl, type, headers } = streamData.data;
-
-            // Ruta de transmisión mediante proxy de backend
             const proxyUrl = `/api/proxy-stream?url=${encodeURIComponent(streamUrl)}&referer=${encodeURIComponent(headers?.Referer || '')}`;
             linkExt.href = streamUrl;
 
-            if (type === 'hls') {
-              if (Hls.isSupported()) {
-                hlsInstance = new Hls();
-                hlsInstance.loadSource(proxyUrl);
-                hlsInstance.attachMedia(videoPlayer);
-                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => videoPlayer.play());
-              } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                videoPlayer.src = proxyUrl;
-                videoPlayer.play();
-              }
+            if (type === 'hls' && Hls.isSupported()) {
+              hlsInstance = new Hls();
+              hlsInstance.loadSource(proxyUrl);
+              hlsInstance.attachMedia(videoPlayer);
+              hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => videoPlayer.play());
             } else {
               videoPlayer.src = proxyUrl;
               videoPlayer.play();
             }
-          } else {
-            alert("Error: " + streamData.message);
           }
         } catch (err) {
-          alert("Error conectando con el servidor de video.");
+          alert("No se pudo cargar la transmisión VIP.");
         }
-      } 
-      // RESPALDO DE SERVIDORES EXTERNOS TMDB
-      else if (srv) {
+      } else if (srv) {
         videoPlayer.pause();
         videoPlayer.style.display = 'none';
         iframe.style.display = 'block';
 
-        let targetUrl = modoActual === 'movie' 
-          ? srv.getMovie(itemActivo.id) 
-          : srv.getTv(itemActivo.id, temporadaActiva, episodioActivo);
-
+        const targetUrl = srv.getMovie(itemActivo.id);
         iframe.src = targetUrl;
         linkExt.href = targetUrl;
-      }
-    }
-
-    async function cargarEstructuraSerie(seriesId) {
-      const selectTemp = document.getElementById('seasonSelect');
-      selectTemp.innerHTML = '<option>Cargando...</option>';
-      try {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_API_KEY}&language=es-MX`);
-        const data = await res.json();
-        selectTemp.innerHTML = '';
-        const temporadasValidas = (data.seasons || []).filter(s => s.season_number > 0);
-
-        if (temporadasValidas.length > 0) {
-          temporadasValidas.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.season_number;
-            opt.innerText = `Temporada ${s.season_number}`;
-            selectTemp.appendChild(opt);
-          });
-          temporadaActiva = temporadasValidas[0].season_number;
-          await seleccionarTemporada(temporadaActiva);
-        }
-      } catch (err) {
-        selectTemp.innerHTML = '<option>Error</option>';
-      }
-    }
-
-    async function seleccionarTemporada(numTemporada) {
-      temporadaActiva = parseInt(numTemporada);
-      const gridEps = document.getElementById('episodesGrid');
-      gridEps.innerHTML = '<div>Cargando episodios...</div>';
-      try {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${itemActivo.id}/season/${temporadaActiva}?api_key=${TMDB_API_KEY}&language=es-MX`);
-        const data = await res.json();
-        gridEps.innerHTML = '';
-
-        if (data.episodes && data.episodes.length > 0) {
-          data.episodes.forEach(ep => {
-            const btn = document.createElement('button');
-            btn.className = `ep-btn ${ep.episode_number === episodioActivo ? 'active' : ''}`;
-            btn.innerText = `E${ep.episode_number}: ${ep.name.substring(0, 12)}...`;
-            btn.onclick = () => {
-              episodioActivo = ep.episode_number;
-              document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-              btn.classList.add('active');
-              actualizarIframe();
-            };
-            gridEps.appendChild(btn);
-          });
-          episodioActivo = data.episodes[0].episode_number;
-          actualizarIframe();
-        }
-      } catch (e) {
-        gridEps.innerHTML = '<div>Error al cargar episodios.</div>';
       }
     }
 
@@ -644,42 +298,12 @@
       const videoPlayer = document.getElementById('videoPlayer');
       videoPlayer.pause();
       videoPlayer.src = '';
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-      }
-      itemActivo = null;
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
     }
 
-    function handleKeyPress(e) {
-      if (e.key === 'Enter') {
-        const query = document.getElementById('searchInput').value.trim();
-        if (query) buscarContenido(query);
-      }
-    }
-
-    async function buscarContenido(query) {
-      document.getElementById('mainHomeView').style.display = 'block';
-      document.getElementById('gridView').style.display = 'none';
-      const container = document.getElementById('catalogContainer');
-      container.innerHTML = `<h2 class="row-title" style="margin-bottom:15px;">Resultados para: "${query}"</h2>`;
-      
-      const rowPosters = document.createElement('div');
-      rowPosters.className = 'grid-cards';
-
-      const endpoint = modoActual === 'movie' ? 'movie' : 'tv';
-      const res = await fetch(`https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&language=es-MX&query=${encodeURIComponent(query)}`);
-      const data = await res.json();
-
-      if (data.results && data.results.length > 0) {
-        data.results.forEach(item => {
-          const card = crearTarjetaItem(item);
-          rowPosters.appendChild(card);
-        });
-        container.appendChild(rowPosters);
-      } else {
-        container.innerHTML += '<p style="color:#888; padding:20px;">No se encontraron resultados.</p>';
-      }
+    function cambiarModo(nuevoModo) {
+      modoActual = nuevoModo;
+      inicializarApp();
     }
 
     inicializarApp();
