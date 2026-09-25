@@ -15,10 +15,9 @@ const db = new sqlite3.Database('./database.db', (err) => {
 
 app.use(express.json());
 
-// --- CAMBIO AQUÍ: Servir carpeta frontend subiendo un nivel ---
+// Servir la carpeta frontend desde el directorio padre
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// --- CAMBIO AQUÍ: Ruta para entregar index.html en el inicio ---
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
@@ -39,7 +38,7 @@ app.get('/api/contenido/:tmdbId', (req, res) => {
   });
 });
 
-// 2. Extraer stream real mediante Puppeteer
+// 2. Extractor de Streams optimizado estilo Xuper
 app.get('/api/resolve-stream/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -52,21 +51,47 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
     try {
       browser = await puppeteer.launch({
         headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process'
+        ]
       });
 
       const page = await browser.newPage();
+      
+      // User-Agent real para evitar bloqueos
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+
       let foundStreamUrl = null;
 
-      // Interceptar peticiones de red para capturar el archivo manifest HLS / MP4
+      // Habilitar interceptación para capturar listas de reproducción HLS / MP4
+      await page.setRequestInterception(true);
       page.on('request', (request) => {
         const url = request.url();
-        if ((url.includes('.m3u8') || url.includes('.mp4')) && !foundStreamUrl) {
-          foundStreamUrl = url;
+        const resourceType = request.resourceType();
+
+        // Bloquear imágenes y fuentes para agilizar la extracción
+        if (['image', 'font', 'stylesheet'].includes(resourceType)) {
+          request.abort();
+        } else {
+          if ((url.includes('.m3u8') || url.includes('.mp4')) && !foundStreamUrl && !url.includes('analytics')) {
+            foundStreamUrl = url;
+          }
+          request.continue();
         }
       });
 
-      await page.goto(row.url_origen, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
+      // Navegar a la web de origen
+      await page.goto(row.url_origen, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+
+      // Esperar unos segundos por si el reproductor carga el vídeo mediante JavaScript/iFrames
+      let retries = 0;
+      while (!foundStreamUrl && retries < 10) {
+        await new Promise(r => setTimeout(r, 500));
+        retries++;
+      }
 
       await browser.close();
 
@@ -80,7 +105,7 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
           }
         });
       } else {
-        return res.status(500).json({ success: false, message: 'No se pudo extraer la URL del video' });
+        return res.status(500).json({ success: false, message: 'No se pudo obtener el flujo directo. Usa los servidores de respaldo.' });
       }
 
     } catch (error) {
@@ -90,7 +115,7 @@ app.get('/api/resolve-stream/:id', async (req, res) => {
   });
 });
 
-// 3. Proxy para evitar bloqueos por CORS / Referer
+// 3. Proxy para bypass de CORS y Referer
 app.get('/api/proxy-stream', async (req, res) => {
   const { url, referer } = req.query;
 
@@ -104,7 +129,7 @@ app.get('/api/proxy-stream', async (req, res) => {
       url: url,
       responseType: 'stream',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Referer': referer || '',
         'Origin': new URL(url).origin
       }
@@ -118,5 +143,5 @@ app.get('/api/proxy-stream', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en el puerto ${PORT}`);
+  console.log(`Servidor de Streaming ejecutándose en el puerto ${PORT}`);
 });
