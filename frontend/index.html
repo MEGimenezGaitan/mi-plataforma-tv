@@ -66,7 +66,7 @@
     }
     .hero-content { position: relative; z-index: 2; max-width: 600px; }
     .hero-title { font-size: 38px; font-weight: 800; margin-bottom: 12px; }
-    .hero-desc { font-size: 14px; color: var(--gray-text); line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .hero-desc { font-size: 14px; color: var(--gray-text); line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
     .btn-play {
       background: linear-gradient(135deg, var(--accent-cyan), var(--primary-blue));
@@ -97,7 +97,7 @@
       font-size: 12px; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    /* MODAL MEJORADO CON DETALLES */
+    /* MODAL MEJORADO */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(5, 8, 15, 0.92); z-index: 1000; overflow-y: auto; backdrop-filter: blur(8px);
@@ -108,27 +108,13 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     }
     .close-btn {
-      position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px;
+      position: absolute; top: 12px; right: 15px; color: #fff; font-size: 24px;
       cursor: pointer; z-index: 1001; background: rgba(30, 41, 59, 0.8);
-      width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     }
-
-    /* PANEL DE INFORMACIÓN DETALLADA */
-    .details-panel {
-      padding: 20px 25px; background: #0f172a; border-bottom: 1px solid #1e293b;
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .meta-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-    .item-modal-title { font-size: 24px; font-weight: 800; color: #fff; }
-    .rating-badge {
-      background: rgba(255, 193, 7, 0.15); color: var(--star-color);
-      padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 13px; border: 1px solid var(--star-color);
-    }
-    .year-badge { background: #1e293b; color: var(--gray-text); padding: 4px 8px; border-radius: 6px; font-size: 12px; }
-    .modal-overview { font-size: 13px; color: #cbd5e1; line-height: 1.5; max-height: 80px; overflow-y: auto; }
 
     .server-selector {
-      display: flex; gap: 8px; padding: 12px 20px; background: #0b0f19;
+      display: flex; gap: 8px; padding: 14px 20px; background: #0b0f19;
       justify-content: flex-start; flex-wrap: wrap; border-bottom: 1px solid #1e293b;
     }
     .server-btn {
@@ -139,8 +125,22 @@
     .server-btn.active { background: var(--primary-blue); color: #fff; border-color: var(--accent-cyan); }
     .server-btn.trailer-btn { background: #991b1b; color: #fff; border-color: #ef4444; }
 
-    .iframe-wrapper { position: relative; width: 100%; height: 500px; background: #000; }
+    .iframe-wrapper { position: relative; width: 100%; height: 480px; background: #000; }
     iframe, video { width: 100%; height: 100%; border: none; display: block; }
+
+    /* PANEL DE INFORMACIÓN DEBAJO DEL REPRODUCTOR */
+    .details-panel {
+      padding: 20px 25px; background: #0f172a; border-top: 1px solid #1e293b;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .meta-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .item-modal-title { font-size: 22px; font-weight: 800; color: #fff; }
+    .rating-badge {
+      background: rgba(255, 193, 7, 0.15); color: var(--star-color);
+      padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 13px; border: 1px solid var(--star-color);
+    }
+    .year-badge { background: #1e293b; color: var(--gray-text); padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+    .modal-overview { font-size: 13px; color: #cbd5e1; line-height: 1.6; }
 
     .series-panel { padding: 20px; background: #0b0f19; border-top: 1px solid #1e293b; }
     .season-select { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; }
@@ -177,8 +177,17 @@
   <div id="playerModal" class="modal">
     <div class="modal-content">
       <span class="close-btn" onclick="cerrarReproductor()">&times;</span>
-      
-      <!-- Panel de Información de la Película / Serie -->
+
+      <!-- Selector de Servidores y Trailer arriba -->
+      <div id="serverContainer" class="server-selector"></div>
+
+      <!-- Contenedor del Reproductor -->
+      <div class="iframe-wrapper">
+        <video id="videoPlayer" controls style="display:none;"></video>
+        <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; accelerometer; gyroscope"></iframe>
+      </div>
+
+      <!-- Panel de Información DEBAJO de la ventana de video -->
       <div class="details-panel">
         <div class="meta-info">
           <h2 class="item-modal-title" id="modalTitle">-</h2>
@@ -186,15 +195,6 @@
           <span class="year-badge" id="modalYear">-</span>
         </div>
         <p class="modal-overview" id="modalOverview">Sin descripción disponible.</p>
-      </div>
-
-      <!-- Selector de Servidores y Trailer -->
-      <div id="serverContainer" class="server-selector"></div>
-
-      <!-- Contenedor del Reproductor -->
-      <div class="iframe-wrapper">
-        <video id="videoPlayer" controls style="display:none;"></video>
-        <iframe id="embedFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
       </div>
 
       <!-- Controles de Series -->
@@ -211,30 +211,30 @@
   <script>
     const TMDB_API_KEY = "76fac3ba42f8bf2c76af4114610465da";
 
-    // SERVIDORES OPTIMIZADOS (INCLUYE OPCIONES EN ESPAÑOL LATINO Y SUBTITULADOS)
+    // SERVIDORES CON ENLACES CORREGIDOS Y SOPORTE LATINO/MULTILENGUAJE
     const SERVIDORES_TMDB = [
       { 
-        nombre: "🇲🇽 Servidor Latino (Embed.su Dual)", 
+        nombre: "🇲🇽 Servidor Latino 1 (Embed.su)", 
         getMovie: (id) => `https://embed.su/embed/movie/${id}`, 
         getTv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` 
       },
       { 
-        nombre: "⚡ Servidor Rápido (VidLink Multi)", 
+        nombre: "⚡ Servidor Latino 2 (SuperEmbed)", 
+        getMovie: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`, 
+        getTv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}` 
+      },
+      { 
+        nombre: "🌐 Servidor VidSrc (Dual)", 
+        getMovie: (id) => `https://vidsrc.me/embed/movie?tmdb=${id}`, 
+        getTv: (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}` 
+      },
+      { 
+        nombre: "🚀 Servidor VidLink (HD)", 
         getMovie: (id) => `https://vidlink.pro/movie/${id}`, 
         getTv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}` 
       },
       { 
-        nombre: "🌐 Servidor Cine (VidSrc.vip)", 
-        getMovie: (id) => `https://vidsrc.vip/embed/movie/${id}`, 
-        getTv: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}` 
-      },
-      { 
-        nombre: "🍿 Servidor Smashy (Subtitulado)", 
-        getMovie: (id) => `https://embed.smashystream.com/playere.php?tmdb=${id}`, 
-        getTv: (id, s, e) => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}` 
-      },
-      { 
-        nombre: "🚀 Servidor AutoEmbed (Multilenguaje)", 
+        nombre: "🍿 Servidor AutoEmbed", 
         getMovie: (id) => `https://player.autoembed.cc/embed/movie/${id}`, 
         getTv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}` 
       }
@@ -316,26 +316,25 @@
       servidorActivoIdx = 0;
       document.getElementById('playerModal').style.display = 'block';
 
-      // Cargar Detalles en la Modal
+      // Cargar Detalles abajo
       document.getElementById('modalTitle').innerText = item.title || item.name;
       document.getElementById('modalRating').innerText = `★ ${(item.vote_average || 0).toFixed(1)}`;
       const fecha = item.release_date || item.first_air_date || '';
       document.getElementById('modalYear').innerText = fecha ? fecha.split('-')[0] : 'N/A';
       document.getElementById('modalOverview').innerText = item.overview || "Sin descripción disponible.";
 
-      // Buscar Trailer en YouTube
       await obtenerTrailerYouTube(item.id);
 
       servidoresDisponibles = [];
 
-      // Servidor del backend si existe registro en SQLite
+      // Servidor interno SQLite si existe
       try {
         const resBackend = await fetch(`/api/contenido/${item.id}`);
         if (resBackend.ok) {
           const dataBackend = await resBackend.json();
           if (dataBackend.success && dataBackend.data) {
             servidoresDisponibles.push({
-              nombre: "⭐ Servidor VIP Directo (Extraído)",
+              nombre: "⭐ Servidor Directo",
               isBackend: true,
               backendId: dataBackend.data.id
             });
@@ -343,7 +342,7 @@
         }
       } catch (e) {}
 
-      // Opción de Trailer Oficial
+      // Trailer Oficial
       if (youtubeTrailerKey) {
         servidoresDisponibles.push({
           nombre: "🎬 Ver Trailer Oficial",
@@ -352,7 +351,6 @@
         });
       }
 
-      // Cargar Servidores de Streaming
       SERVIDORES_TMDB.forEach(srv => servidoresDisponibles.push({ ...srv, isBackend: false }));
 
       renderizarBotonesServidores();
@@ -374,7 +372,6 @@
         const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${id}/videos?api_key=${TMDB_API_KEY}&language=es-MX`);
         let data = await res.json();
         
-        // Si no hay trailer en español, buscar en inglés
         if (!data.results || data.results.length === 0) {
           const resEn = await fetch(`https://api.themoviedb.org/3/${endpoint}/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`);
           data = await resEn.json();
@@ -418,7 +415,9 @@
         videoPlayer.pause();
         videoPlayer.style.display = 'none';
         iframe.style.display = 'block';
-        iframe.src = `https://www.youtube.com/embed/${srv.ytKey}?autoplay=1`;
+        // Solución al Error 153 de YouTube: origin + enablejsapi
+        const origin = window.location.origin;
+        iframe.src = `https://www.youtube-nocookie.com/embed/${srv.ytKey}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
       } else if (srv && srv.isBackend) {
         iframe.style.display = 'none';
         videoPlayer.style.display = 'block';
@@ -446,10 +445,10 @@
               videoPlayer.play();
             }
           } else {
-            alert("No se pudo extraer la fuente. Intenta con los otros servidores.");
+            alert("No se pudo extraer la fuente interna.");
           }
         } catch (err) {
-          alert("Error de conexión con el backend.");
+          alert("Error de conexión.");
         }
       } else if (srv) {
         videoPlayer.pause();
